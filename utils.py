@@ -1,0 +1,46 @@
+import pandas as pd
+import numpy as np
+
+def process_excel_data(file):
+    """Process uploaded Excel file and return formatted DataFrame"""
+    if file.name.endswith('.csv'):
+        df = pd.read_csv(file)
+    else:
+        df = pd.read_excel(file)
+    
+    required_columns = ['Sale No', 'Sold Qty (Ton)', 'Unsold Qty (Ton)', 'Sales Price (₹)']
+    
+    # Validate columns
+    if not all(col in df.columns for col in required_columns):
+        raise ValueError("Upload file must contain all required columns")
+    
+    # Clean and format data
+    df = df[required_columns]
+    df = df.dropna()
+    
+    return df
+
+def generate_insights(df):
+    """Generate automated insights from the data"""
+    insights = []
+    
+    # Price trends
+    price_trend = df['Sales Price (₹)'].pct_change().mean()
+    if price_trend > 0:
+        insights.append(f"Positive price trend observed with {price_trend*100:.1f}% average growth")
+    else:
+        insights.append(f"Negative price trend observed with {price_trend*100:.1f}% average decline")
+    
+    # Sales volume analysis
+    avg_sold = df['Sold Qty (Ton)'].mean()
+    latest_sold = df['Sold Qty (Ton)'].iloc[-1]
+    if latest_sold > avg_sold:
+        insights.append(f"Latest sales volume ({latest_sold:,.0f} tons) is above the average ({avg_sold:,.0f} tons)")
+    else:
+        insights.append(f"Latest sales volume ({latest_sold:,.0f} tons) is below the average ({avg_sold:,.0f} tons)")
+    
+    # Market efficiency
+    unsold_ratio = df['Unsold Qty (Ton)'].sum() / (df['Sold Qty (Ton)'].sum() + df['Unsold Qty (Ton)'].sum())
+    insights.append(f"Market efficiency: {(1-unsold_ratio)*100:.1f}% of total quantity sold")
+    
+    return insights
