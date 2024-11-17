@@ -3,7 +3,11 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import numpy as np
-from utils import process_excel_data, generate_insights
+from utils import (
+    process_excel_data, generate_insights,
+    generate_price_analysis, generate_market_insights,
+    generate_volume_analysis, generate_recommendations
+)
 from styles import apply_custom_styles
 import os
 
@@ -47,18 +51,20 @@ try:
     
     col1, col2 = st.columns(2)
     with col1:
+        # Set default to only North India
         selected_regions = st.multiselect(
             "Select Regions",
             options=regions,
-            default=regions,
+            default=["North India"],
             key='region_selector'
         )
     
     with col2:
+        # Set default to only Dust
         selected_types = st.multiselect(
             "Select Tea Types",
             options=tea_types,
-            default=tea_types,
+            default=["Dust"],
             key='type_selector'
         )
     
@@ -221,7 +227,6 @@ try:
         with col:
             st.markdown(f"**{region} CTC {tea_type}**")
             
-            # Calculate metrics safely handling NaN values
             avg_price = centre_df['Sales Price(Kg)'].mean()
             price_change = centre_df['Sales Price(Kg)'].pct_change().mean()
             total_sold = centre_df['Sold Qty (Ton)'].sum()
@@ -244,34 +249,34 @@ try:
                 f"{efficiency:.1f}%"
             )
     
-    # Market Insights with AI Analysis
+    # Market Insights with Expandable Sections
     st.header("Market Insights")
     st.markdown("""
-    Below are comprehensive market insights generated through AI analysis, including:
-    - AI-powered Market Analysis
-    - Market Level Analysis
-    - Trend Analysis
-    - Comparative Market Analysis
+    Click on each section below to view detailed market analysis:
     """)
     
-    # Check for OpenAI API key
-    if 'OPENAI_API_KEY' not in os.environ:
-        st.warning("⚠️ OpenAI API key not found. AI-powered analysis will be limited.")
-    
-    # Generate and display insights with error handling
-    try:
-        insights = generate_insights(df_selected)
-        for insight in insights:
-            if "AI narrative generation" in insight and "error" in insight.lower():
-                st.error(insight)
-            elif "=== " in insight and " ===" in insight:
-                st.subheader(insight.strip("= \n"))
-            elif "--- " in insight and " ---" in insight:
-                st.markdown(f"**{insight.strip('- ')}**")
-            else:
-                st.markdown(insight)
-    except Exception as e:
-        st.error(f"Error generating market insights: {str(e)}")
+    for centre in selected_centres:
+        st.subheader(f"{centre} Analysis")
+        
+        # Price Analysis Section
+        with st.expander("🏷️ Price Analysis", expanded=True):
+            price_analysis = generate_price_analysis(df, centre)
+            st.markdown(price_analysis)
+        
+        # Market Insights Section
+        with st.expander("📊 Market Insights", expanded=False):
+            market_analysis = generate_market_insights(df, centre)
+            st.markdown(market_analysis)
+        
+        # Volume Analysis Section
+        with st.expander("📈 Volume Analysis", expanded=False):
+            volume_analysis = generate_volume_analysis(df, centre)
+            st.markdown(volume_analysis)
+        
+        # Recommendations Section
+        with st.expander("💡 Strategic Recommendations", expanded=False):
+            recommendations = generate_recommendations(df, centre)
+            st.markdown(recommendations)
     
     # Data Table - only for selected centres
     st.header("Detailed Data View")

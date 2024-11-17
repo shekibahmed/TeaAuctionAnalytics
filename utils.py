@@ -265,8 +265,226 @@ Provide a 2-3 sentence analysis highlighting the most important insights and pot
         logging.error(f"Error in AI narrative generation: {str(e)}")
         return f"AI narrative generation encountered an error: {str(e)}"
 
+def generate_price_analysis(df: pd.DataFrame, centre: str) -> str:
+    """Generate detailed price analysis including trends, seasonality, and forecasts"""
+    try:
+        if 'OPENAI_API_KEY' not in os.environ:
+            return fallback_price_analysis(df, centre)
+        
+        client = openai.OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
+        centre_df = df[df['Centre'] == centre].sort_values('Sale No').copy()
+        
+        # Calculate key price metrics
+        current_price = centre_df['Sales Price(Kg)'].iloc[-1]
+        avg_price = centre_df['Sales Price(Kg)'].mean()
+        price_trend = centre_df['Sales Price(Kg)'].pct_change().mean()
+        price_volatility = centre_df['Sales Price(Kg)'].std()
+        
+        market_context = f"""
+        Market: {centre}
+        Current Price: ₹{current_price:.2f}/Kg
+        Average Price: ₹{avg_price:.2f}/Kg
+        Price Trend: {price_trend*100:.1f}% average change
+        Price Volatility: ₹{price_volatility:.2f}/Kg
+        Historical Prices: {', '.join([f'₹{p:.2f}' for p in centre_df['Sales Price(Kg)'].tolist()])}
+        """
+        
+        prompt = f"""You are a tea market price analyst. Analyze the following price data and provide detailed insights on:
+1. Price trends and their implications
+2. Price seasonality patterns if any
+3. Short-term price forecast based on current trends
+4. Price volatility analysis
+
+Market Data:
+{market_context}
+
+Provide a comprehensive analysis in 3-4 sentences."""
+        
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7,
+            max_tokens=200
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        logging.error(f"Error in price analysis: {str(e)}")
+        return fallback_price_analysis(df, centre)
+
+def generate_market_insights(df: pd.DataFrame, centre: str) -> str:
+    """Generate market position and competitive analysis insights"""
+    try:
+        if 'OPENAI_API_KEY' not in os.environ:
+            return fallback_market_insights(df, centre)
+        
+        client = openai.OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
+        centre_df = df[df['Centre'] == centre].sort_values('Sale No').copy()
+        region, tea_type = centre.split(' CTC ')
+        
+        # Calculate market metrics
+        market_share = centre_df['Sold Qty (Ton)'].sum() / df['Sold Qty (Ton)'].sum()
+        efficiency = centre_df['Sold Qty (Ton)'].sum() / (centre_df['Sold Qty (Ton)'].sum() + centre_df['Unsold Qty (Ton)'].sum())
+        
+        market_context = f"""
+        Market: {centre}
+        Region: {region}
+        Tea Type: {tea_type}
+        Market Share: {market_share*100:.1f}%
+        Market Efficiency: {efficiency*100:.1f}%
+        """
+        
+        prompt = f"""You are a tea market analyst. Analyze the following market data and provide insights on:
+1. Market positioning
+2. Competitive advantages/disadvantages
+3. Market efficiency analysis
+4. Strategic market position
+
+Market Data:
+{market_context}
+
+Provide a comprehensive analysis in 3-4 sentences."""
+        
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7,
+            max_tokens=200
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        logging.error(f"Error in market insights: {str(e)}")
+        return fallback_market_insights(df, centre)
+
+def generate_volume_analysis(df: pd.DataFrame, centre: str) -> str:
+    """Generate detailed volume analysis including trends and demand patterns"""
+    try:
+        if 'OPENAI_API_KEY' not in os.environ:
+            return fallback_volume_analysis(df, centre)
+        
+        client = openai.OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
+        centre_df = df[df['Centre'] == centre].sort_values('Sale No').copy()
+        
+        # Calculate volume metrics
+        total_volume = centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)']
+        avg_volume = total_volume.mean()
+        volume_trend = total_volume.pct_change().mean()
+        sold_ratio = centre_df['Sold Qty (Ton)'].sum() / total_volume.sum()
+        
+        volume_context = f"""
+        Market: {centre}
+        Average Volume: {avg_volume:.1f} tons
+        Volume Trend: {volume_trend*100:.1f}% average change
+        Sold Ratio: {sold_ratio*100:.1f}%
+        Recent Volumes: {', '.join([f'{v:.0f}' for v in total_volume.tail(5).tolist()])} tons
+        """
+        
+        prompt = f"""You are a tea market volume analyst. Analyze the following volume data and provide insights on:
+1. Volume trends and patterns
+2. Demand-supply dynamics
+3. Volume seasonality if any
+4. Market absorption capacity
+
+Market Data:
+{volume_context}
+
+Provide a comprehensive analysis in 3-4 sentences."""
+        
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7,
+            max_tokens=200
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        logging.error(f"Error in volume analysis: {str(e)}")
+        return fallback_volume_analysis(df, centre)
+
+def generate_recommendations(df: pd.DataFrame, centre: str) -> str:
+    """Generate AI-powered strategic recommendations"""
+    try:
+        if 'OPENAI_API_KEY' not in os.environ:
+            return fallback_recommendations(df, centre)
+        
+        client = openai.OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
+        centre_df = df[df['Centre'] == centre].sort_values('Sale No').copy()
+        
+        # Calculate key metrics for recommendations
+        price_trend = centre_df['Sales Price(Kg)'].pct_change().mean()
+        volume_trend = (centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)']).pct_change().mean()
+        efficiency = centre_df['Sold Qty (Ton)'].sum() / (centre_df['Sold Qty (Ton)'].sum() + centre_df['Unsold Qty (Ton)']).sum()
+        
+        context = f"""
+        Market: {centre}
+        Price Trend: {price_trend*100:.1f}% average change
+        Volume Trend: {volume_trend*100:.1f}% average change
+        Market Efficiency: {efficiency*100:.1f}%
+        """
+        
+        prompt = f"""You are a tea market strategist. Based on the following market data, provide strategic recommendations focusing on:
+1. Price positioning strategy
+2. Volume optimization
+3. Market efficiency improvement
+4. Competitive positioning
+
+Market Data:
+{context}
+
+Provide 3-4 specific, actionable recommendations."""
+        
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7,
+            max_tokens=200
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        logging.error(f"Error in recommendations: {str(e)}")
+        return fallback_recommendations(df, centre)
+
+# Fallback analysis functions for when AI is unavailable
+def fallback_price_analysis(df: pd.DataFrame, centre: str) -> str:
+    centre_df = df[df['Centre'] == centre].sort_values('Sale No').copy()
+    current_price = centre_df['Sales Price(Kg)'].iloc[-1]
+    avg_price = centre_df['Sales Price(Kg)'].mean()
+    price_trend = centre_df['Sales Price(Kg)'].pct_change().mean()
+    return f"""Price Analysis (Data-based):
+• Current price: ₹{current_price:.2f}/Kg
+• Average price: ₹{avg_price:.2f}/Kg
+• Price trend: {price_trend*100:.1f}% average change
+• Trend indication: {'Upward' if price_trend > 0 else 'Downward'} movement"""
+
+def fallback_market_insights(df: pd.DataFrame, centre: str) -> str:
+    centre_df = df[df['Centre'] == centre].sort_values('Sale No').copy()
+    market_share = centre_df['Sold Qty (Ton)'].sum() / df['Sold Qty (Ton)'].sum()
+    efficiency = centre_df['Sold Qty (Ton)'].sum() / (centre_df['Sold Qty (Ton)'].sum() + centre_df['Unsold Qty (Ton)'].sum())
+    return f"""Market Insights (Data-based):
+• Market share: {market_share*100:.1f}%
+• Market efficiency: {efficiency*100:.1f}%
+• Position: {'Strong' if efficiency > 0.8 else 'Moderate' if efficiency > 0.6 else 'Weak'} market performance"""
+
+def fallback_volume_analysis(df: pd.DataFrame, centre: str) -> str:
+    centre_df = df[df['Centre'] == centre].sort_values('Sale No').copy()
+    total_volume = centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)']
+    avg_volume = total_volume.mean()
+    volume_trend = total_volume.pct_change().mean()
+    return f"""Volume Analysis (Data-based):
+• Average volume: {avg_volume:.1f} tons
+• Volume trend: {volume_trend*100:.1f}% average change
+• Trend indication: {'Increasing' if volume_trend > 0 else 'Decreasing'} volume"""
+
+def fallback_recommendations(df: pd.DataFrame, centre: str) -> str:
+    centre_df = df[df['Centre'] == centre].sort_values('Sale No').copy()
+    efficiency = centre_df['Sold Qty (Ton)'].sum() / (centre_df['Sold Qty (Ton)'].sum() + centre_df['Unsold Qty (Ton)'].sum())
+    price_trend = centre_df['Sales Price(Kg)'].pct_change().mean()
+    return f"""Recommendations (Data-based):
+• {'Maintain' if efficiency > 0.8 else 'Improve'} current market efficiency
+• {'Maintain' if price_trend > 0 else 'Review'} pricing strategy
+• Focus on {'volume optimization' if efficiency < 0.7 else 'price optimization'}"""
+
 def generate_insights(df: pd.DataFrame) -> List[str]:
-    """Generate comprehensive market insights with levels, trends, comparatives, and AI narrative"""
+    """Generate comprehensive market insights with specialized analysis for each category"""
     all_insights = []
     
     try:
@@ -274,27 +492,25 @@ def generate_insights(df: pd.DataFrame) -> List[str]:
             region, tea_type = centre.split(' CTC ')
             all_insights.append(f"\n=== {region} CTC {tea_type} Analysis ===\n")
             
-            try:
-                # AI Narrative Analysis
-                ai_narrative = generate_ai_narrative(df, centre)
-                all_insights.append("--- AI Market Analysis ---")
-                all_insights.append(ai_narrative)
-                all_insights.append("")
-            except Exception as e:
-                logging.error(f"Error in AI narrative for {centre}: {str(e)}")
-                all_insights.append("AI narrative analysis temporarily unavailable")
+            # Price Analysis
+            price_analysis = generate_price_analysis(df, centre)
+            all_insights.append("--- Price Analysis ---")
+            all_insights.append(price_analysis)
             
-            # Level Analysis
-            all_insights.append("--- Market Levels ---")
-            all_insights.extend(analyze_levels(df, centre))
+            # Market Insights
+            market_analysis = generate_market_insights(df, centre)
+            all_insights.append("\n--- Market Insights ---")
+            all_insights.append(market_analysis)
             
-            # Trend Analysis
-            all_insights.append("\n--- Market Trends ---")
-            all_insights.extend(analyze_trends(df, centre))
+            # Volume Analysis
+            volume_analysis = generate_volume_analysis(df, centre)
+            all_insights.append("\n--- Volume Analysis ---")
+            all_insights.append(volume_analysis)
             
-            # Comparative Analysis
-            all_insights.append("\n--- Market Comparatives ---")
-            all_insights.extend(analyze_comparatives(df, centre))
+            # Recommendations
+            recommendations = generate_recommendations(df, centre)
+            all_insights.append("\n--- Strategic Recommendations ---")
+            all_insights.append(recommendations)
             
             all_insights.append("\n" + "="*50 + "\n")
         
