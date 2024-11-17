@@ -15,6 +15,32 @@ def get_closest_match(column: str, possible_matches: List[str]) -> Tuple[str, fl
              for match in possible_matches]
     return max(scores, key=lambda x: x[1])
 
+def standardize_market_category(category: str) -> str:
+    """Standardize market category name to the format: {region} CTC {type}"""
+    # Remove extra spaces and standardize case
+    category = ' '.join(category.strip().split())
+    
+    # Extract region and type
+    if ' CTC ' in category:
+        region, type_part = category.split(' CTC ')
+    else:
+        parts = category.split()
+        if len(parts) < 3 or parts[0] not in ['North', 'South'] or parts[1] != 'India' or parts[-1] not in ['Leaf', 'Dust']:
+            return category  # Return original if format is completely invalid
+        region = ' '.join(parts[:2])
+        type_part = parts[-1]
+    
+    # Validate and standardize region
+    if region not in ['North India', 'South India']:
+        return category
+    
+    # Validate and standardize type
+    if type_part not in ['Leaf', 'Dust']:
+        return category
+    
+    # Return standardized format
+    return f"{region} CTC {type_part}"
+
 def process_excel_data(file):
     """Process uploaded Excel file and return formatted DataFrame"""
     # Column name variations mapping
@@ -97,15 +123,38 @@ def process_excel_data(file):
     df['Sold Qty (Ton)'] = pd.to_numeric(df['Sold Qty (Ton)'])
     df['Unsold Qty (Ton)'] = pd.to_numeric(df['Unsold Qty (Ton)'])
     
-    # Validate market categories
-    valid_categories = [
-        'North India CTC Leaf', 'North India CTC Dust',
-        'South India CTC Leaf', 'South India CTC Dust'
-    ]
+    # Standardize market categories
+    df['Centre'] = df['Centre'].apply(standardize_market_category)
     
-    invalid_categories = set(df['Centre'].unique()) - set(valid_categories)
+    # Validate market categories
+    valid_regions = ['North India', 'South India']
+    valid_types = ['Leaf', 'Dust']
+    
+    invalid_categories = []
+    for category in df['Centre'].unique():
+        if ' CTC ' not in category:
+            invalid_categories.append(category)
+            continue
+        
+        region, type_part = category.split(' CTC ')
+        if region not in valid_regions or type_part not in valid_types:
+            invalid_categories.append(category)
+    
     if invalid_categories:
-        raise ValueError(f"Invalid market categories found: {invalid_categories}. Valid categories are: " + ", ".join(valid_categories))
+        error_msg = """
+Invalid market categories found:
+{}
+
+Expected format: "<region> CTC <type>"
+where:
+- <region> must be either "North India" or "South India"
+- <type> must be either "Leaf" or "Dust"
+
+Examples of valid categories:
+- North India CTC Leaf
+- South India CTC Dust
+""".format('\n'.join(f'- {cat}' for cat in invalid_categories))
+        raise ValueError(error_msg)
     
     return df
 
