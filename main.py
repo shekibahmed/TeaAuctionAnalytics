@@ -103,7 +103,7 @@ try:
                        row=1, col=1, secondary_y=True)
 
             # Add table trace
-            table_data = centre_df.sort_values('Sale No', ascending=False).copy()
+            table_data = centre_df.sort_values('Sale No', ascending=True).copy()
             fig.add_trace(
                 go.Table(
                     header=dict(
@@ -201,7 +201,7 @@ try:
                 )
 
                 # Add table trace
-                table_data = centre_df.sort_values('Sale No', ascending=False).copy()
+                table_data = centre_df.sort_values('Sale No', ascending=True).copy()
                 fig.add_trace(
                     go.Table(
                         header=dict(
