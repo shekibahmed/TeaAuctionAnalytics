@@ -31,33 +31,21 @@ try:
         st.success("File uploaded and processed successfully!")
 
         # Center selection with region and type filtering
-        regions = sorted(
-            list(
-                set([
-                    centre.split(' CTC ')[0]
-                    for centre in df['Centre'].unique()
-                ])))
-        tea_types = sorted(
-            list(
-                set([
-                    centre.split(' CTC ')[1]
-                    for centre in df['Centre'].unique()
-                ])))
+        regions = sorted(list(set([centre.split(' CTC ')[0] for centre in df['Centre'].unique()])))
+        tea_types = sorted(list(set([centre.split(' CTC ')[1] for centre in df['Centre'].unique()])))
 
         col1, col2 = st.columns(2)
         with col1:
-            # Set default to only North India
             selected_regions = st.multiselect("Select Regions",
-                                              options=regions,
-                                              default=["North India"],
-                                              key='region_selector')
+                                          options=regions,
+                                          default=["North India"],
+                                          key='region_selector')
 
         with col2:
-            # Set default to only Dust
             selected_types = st.multiselect("Select Tea Types",
-                                            options=tea_types,
-                                            default=["Dust"],
-                                            key='type_selector')
+                                        options=tea_types,
+                                        default=["Dust"],
+                                        key='type_selector')
 
         # Filter centres based on region and type selection
         selected_centres = sorted([
@@ -76,8 +64,15 @@ try:
         # Create charts based on selection
         num_centres = len(selected_centres)
         if num_centres == 1:
-            # Single center - larger chart
-            fig = make_subplots(specs=[[{"secondary_y": True}]])
+            # Single center - larger chart with table
+            fig = make_subplots(
+                rows=2, 
+                cols=1,
+                specs=[[{"secondary_y": True}], [{"type": "table"}]],
+                row_heights=[0.7, 0.3],
+                vertical_spacing=0.1
+            )
+            
             centre = selected_centres[0]
             centre_df = df_selected[df_selected['Centre'] == centre].copy()
 
@@ -89,164 +84,171 @@ try:
 
             # Bar charts for Sold and Unsold
             fig.add_trace(go.Bar(name='Sold Qty (Ton)',
-                                 x=centre_df['Sale No'],
-                                 y=centre_df['Sold Qty (Ton)'],
-                                 marker_color='#FF9966'),
-                          secondary_y=False)
+                              x=centre_df['Sale No'],
+                              y=centre_df['Sold Qty (Ton)'],
+                              marker_color='#FF9966'),
+                       row=1, col=1, secondary_y=False)
 
             fig.add_trace(go.Bar(name='Unsold Qty (Ton)',
-                                 x=centre_df['Sale No'],
-                                 y=centre_df['Unsold Qty (Ton)'],
-                                 marker_color='#808080'),
-                          secondary_y=False)
+                              x=centre_df['Sale No'],
+                              y=centre_df['Unsold Qty (Ton)'],
+                              marker_color='#808080'),
+                       row=1, col=1, secondary_y=False)
 
             # Line chart for Sales Price
             fig.add_trace(go.Scatter(name='Sales Price (Kg)',
-                                     x=centre_df['Sale No'],
-                                     y=centre_df['Sales Price(Kg)'],
-                                     line=dict(color='#3366CC', width=2)),
-                          secondary_y=True)
+                                  x=centre_df['Sale No'],
+                                  y=centre_df['Sales Price(Kg)'],
+                                  line=dict(color='#3366CC', width=2)),
+                       row=1, col=1, secondary_y=True)
 
-            # Update layout for single chart
-            fig.update_layout(title=f"{region} CTC {tea_type} Market Trends",
-                              height=600,
-                              barmode='group',
-                              hovermode='x unified',
-                              template='plotly_white')
-
-            fig.update_xaxes(title_text='Sale No')
-            fig.update_yaxes(title_text='Quantity (Tons)', secondary_y=False)
-            fig.update_yaxes(title_text='Price (₹/Kg)', secondary_y=True)
-
-            # Display chart
-            st.plotly_chart(fig, use_container_width=True)
-            
-            # Add data table below the chart
-            st.subheader(f"{region} CTC {tea_type} - Detailed Data")
-            formatted_df = centre_df.copy()
-            formatted_df['Sales Price(Kg)'] = formatted_df['Sales Price(Kg)'].round(2)
-            formatted_df['Sold Qty (Ton)'] = formatted_df['Sold Qty (Ton)'].round(2)
-            formatted_df['Unsold Qty (Ton)'] = formatted_df['Unsold Qty (Ton)'].round(2)
-            formatted_df = formatted_df.sort_values('Sale No', ascending=False)
-            st.dataframe(
-                formatted_df,
-                column_config={
-                    'Centre': 'Market',
-                    'Sale No': 'Sale Number',
-                    'Sales Price(Kg)': st.column_config.NumberColumn('Price (₹/Kg)', format="₹%.2f"),
-                    'Sold Qty (Ton)': st.column_config.NumberColumn('Sold Qty (Tons)', format="%.2f"),
-                    'Unsold Qty (Ton)': st.column_config.NumberColumn('Unsold Qty (Tons)', format="%.2f"),
-                },
-                hide_index=True,
-                use_container_width=True
+            # Add table trace
+            table_data = centre_df.sort_values('Sale No', ascending=False).copy()
+            fig.add_trace(
+                go.Table(
+                    header=dict(
+                        values=['Sale No', 'Price (₹/Kg)', 'Sold Qty (Tons)', 'Unsold Qty (Tons)'],
+                        font=dict(size=12, color='white'),
+                        fill_color='#1F4E79',
+                        align=['center', 'right', 'right', 'right']
+                    ),
+                    cells=dict(
+                        values=[
+                            table_data['Sale No'],
+                            table_data['Sales Price(Kg)'].round(2).apply(lambda x: f'₹{x:.2f}'),
+                            table_data['Sold Qty (Ton)'].round(2),
+                            table_data['Unsold Qty (Ton)'].round(2)
+                        ],
+                        font=dict(size=11),
+                        align=['center', 'right', 'right', 'right'],
+                        format=[None, None, '.2f', '.2f'],
+                        height=25
+                    )
+                ),
+                row=2, col=1
             )
 
+            # Update layout for single chart
+            fig.update_layout(
+                title=f"{region} CTC {tea_type} Market Trends",
+                height=800,
+                barmode='group',
+                hovermode='x unified',
+                template='plotly_white',
+                margin=dict(t=30, b=0, l=60, r=60)
+            )
+
+            fig.update_xaxes(title_text='Sale No', row=1, col=1)
+            fig.update_yaxes(title_text='Quantity (Tons)', secondary_y=False, row=1, col=1)
+            fig.update_yaxes(title_text='Price (₹/Kg)', secondary_y=True, row=1, col=1)
+
         else:
-            # Multiple centers - grid layout
+            # Multiple centers - grid layout with tables
             rows = (num_centres + 1) // 2
             fig = make_subplots(
-                rows=rows,
+                rows=rows * 2,
                 cols=min(2, num_centres),
-                specs=[[{
-                    "secondary_y": True
-                }] * min(2, num_centres)] * rows,
+                specs=[[{"secondary_y": True}, {"secondary_y": True}] if i % 2 == 0 else [{"type": "table"}, {"type": "table"}] for i in range(rows * 2)],
                 subplot_titles=[
                     f"{centre.split(' CTC ')[0]} CTC {centre.split(' CTC ')[1]} Market Trends"
                     for centre in selected_centres
-                ])
+                ],
+                vertical_spacing=0.1,
+                row_heights=[0.35, 0.15] * rows
+            )
 
             for idx, centre in enumerate(selected_centres):
-                row = idx // 2 + 1
+                chart_row = (idx // 2) * 2 + 1
+                table_row = chart_row + 1
                 col = idx % 2 + 1
 
                 centre_df = df_selected[df_selected['Centre'] == centre].copy()
                 centre_df = centre_df.sort_values('Sale No')
 
                 # Bar charts for Sold and Unsold
-                fig.add_trace(go.Bar(name='Sold Qty (Ton)',
-                                     x=centre_df['Sale No'],
-                                     y=centre_df['Sold Qty (Ton)'],
-                                     marker_color='#FF9966',
-                                     showlegend=(idx == 0)),
-                              row=row,
-                              col=col,
-                              secondary_y=False)
+                fig.add_trace(
+                    go.Bar(
+                        name='Sold Qty (Ton)',
+                        x=centre_df['Sale No'],
+                        y=centre_df['Sold Qty (Ton)'],
+                        marker_color='#FF9966',
+                        showlegend=(idx == 0)
+                    ),
+                    row=chart_row, col=col, secondary_y=False
+                )
 
-                fig.add_trace(go.Bar(name='Unsold Qty (Ton)',
-                                     x=centre_df['Sale No'],
-                                     y=centre_df['Unsold Qty (Ton)'],
-                                     marker_color='#808080',
-                                     showlegend=(idx == 0)),
-                              row=row,
-                              col=col,
-                              secondary_y=False)
+                fig.add_trace(
+                    go.Bar(
+                        name='Unsold Qty (Ton)',
+                        x=centre_df['Sale No'],
+                        y=centre_df['Unsold Qty (Ton)'],
+                        marker_color='#808080',
+                        showlegend=(idx == 0)
+                    ),
+                    row=chart_row, col=col, secondary_y=False
+                )
 
                 # Line chart for Sales Price
-                fig.add_trace(go.Scatter(name='Sales Price (Kg)',
-                                         x=centre_df['Sale No'],
-                                         y=centre_df['Sales Price(Kg)'],
-                                         line=dict(color='#3366CC', width=2),
-                                         showlegend=(idx == 0)),
-                              row=row,
-                              col=col,
-                              secondary_y=True)
+                fig.add_trace(
+                    go.Scatter(
+                        name='Sales Price (Kg)',
+                        x=centre_df['Sale No'],
+                        y=centre_df['Sales Price(Kg)'],
+                        line=dict(color='#3366CC', width=2),
+                        showlegend=(idx == 0)
+                    ),
+                    row=chart_row, col=col, secondary_y=True
+                )
+
+                # Add table trace
+                table_data = centre_df.sort_values('Sale No', ascending=False).copy()
+                fig.add_trace(
+                    go.Table(
+                        header=dict(
+                            values=['Sale No', 'Price (₹/Kg)', 'Sold Qty (Tons)', 'Unsold Qty (Tons)'],
+                            font=dict(size=11, color='white'),
+                            fill_color='#1F4E79',
+                            align=['center', 'right', 'right', 'right']
+                        ),
+                        cells=dict(
+                            values=[
+                                table_data['Sale No'],
+                                table_data['Sales Price(Kg)'].round(2).apply(lambda x: f'₹{x:.2f}'),
+                                table_data['Sold Qty (Ton)'].round(2),
+                                table_data['Unsold Qty (Ton)'].round(2)
+                            ],
+                            font=dict(size=10),
+                            align=['center', 'right', 'right', 'right'],
+                            format=[None, None, '.2f', '.2f'],
+                            height=25
+                        )
+                    ),
+                    row=table_row, col=col
+                )
+
+                # Update axes labels
+                fig.update_xaxes(title_text='Sale No', row=chart_row, col=col)
+                fig.update_yaxes(title_text='Quantity (Tons)', secondary_y=False, row=chart_row, col=col)
+                fig.update_yaxes(title_text='Price (₹/Kg)', secondary_y=True, row=chart_row, col=col)
 
             # Update layout for multiple charts
-            fig.update_layout(height=400 * rows,
-                              barmode='group',
-                              hovermode='x unified',
-                              template='plotly_white',
-                              margin=dict(t=50, b=20, l=60, r=60))
+            fig.update_layout(
+                height=500 * rows,
+                barmode='group',
+                hovermode='x unified',
+                template='plotly_white',
+                margin=dict(t=50, b=0, l=60, r=60),
+                showlegend=True
+            )
 
-            # Update axes labels for all subplots
-            for i in range(1, rows + 1):
-                for j in range(1, min(3, num_centres + 1)):
-                    if (i - 1) * 2 + j <= num_centres:
-                        fig.update_xaxes(title_text='Sale No', row=i, col=j)
-                        fig.update_yaxes(title_text='Quantity (Tons)',
-                                         secondary_y=False,
-                                         row=i,
-                                         col=j)
-                        fig.update_yaxes(title_text='Price (₹/Kg)',
-                                         secondary_y=True,
-                                         row=i,
-                                         col=j)
+        # Display charts with integrated tables
+        st.plotly_chart(fig, use_container_width=True)
 
-            # Display charts
-            st.plotly_chart(fig, use_container_width=True)
-            
-            # Add data tables for each centre
-            st.subheader("Detailed Data by Market")
-            
-            for centre in selected_centres:
-                region, tea_type = centre.split(' CTC ')
-                centre_df = df_selected[df_selected['Centre'] == centre].copy()
-                
-                with st.expander(f"{region} CTC {tea_type} - Detailed Data", expanded=True):
-                    formatted_df = centre_df.copy()
-                    formatted_df['Sales Price(Kg)'] = formatted_df['Sales Price(Kg)'].round(2)
-                    formatted_df['Sold Qty (Ton)'] = formatted_df['Sold Qty (Ton)'].round(2)
-                    formatted_df['Unsold Qty (Ton)'] = formatted_df['Unsold Qty (Ton)'].round(2)
-                    formatted_df = formatted_df.sort_values('Sale No', ascending=False)
-                    st.dataframe(
-                        formatted_df,
-                        column_config={
-                            'Centre': 'Market',
-                            'Sale No': 'Sale Number',
-                            'Sales Price(Kg)': st.column_config.NumberColumn('Price (₹/Kg)', format="₹%.2f"),
-                            'Sold Qty (Ton)': st.column_config.NumberColumn('Sold Qty (Tons)', format="%.2f"),
-                            'Unsold Qty (Ton)': st.column_config.NumberColumn('Unsold Qty (Tons)', format="%.2f"),
-                        },
-                        hide_index=True,
-                        use_container_width=True
-                    )
-
-        # Summary Metrics - only for selected centres
+        # Summary Metrics
         st.subheader("Key Metrics by Market")
         metrics_cols = st.columns(len(selected_centres))
 
-        for idx, (col, centre) in enumerate(zip(metrics_cols,
-                                                selected_centres)):
+        for idx, (col, centre) in enumerate(zip(metrics_cols, selected_centres)):
             centre_df = df_selected[df_selected['Centre'] == centre].copy()
             region, tea_type = centre.split(' CTC ')
 
@@ -258,17 +260,14 @@ try:
                 total_sold = centre_df['Sold Qty (Ton)'].sum()
                 sold_change = centre_df['Sold Qty (Ton)'].pct_change().mean()
                 total_qty = total_sold + centre_df['Unsold Qty (Ton)'].sum()
-                efficiency = (total_sold / total_qty *
-                              100) if total_qty > 0 else 0
+                efficiency = (total_sold / total_qty * 100) if total_qty > 0 else 0
 
                 st.metric(
                     "Avg Sales Price", f"₹{avg_price:.2f}/Kg",
-                    f"{price_change*100:.1f}%"
-                    if pd.notna(price_change) else None)
+                    f"{price_change*100:.1f}%" if pd.notna(price_change) else None)
                 st.metric(
                     "Total Sold Qty", f"{total_sold:,.0f} Tons",
-                    f"{sold_change*100:.1f}%"
-                    if pd.notna(sold_change) else None)
+                    f"{sold_change*100:.1f}%" if pd.notna(sold_change) else None)
                 st.metric("Market Efficiency", f"{efficiency:.1f}%")
 
         # Market Insights with Expandable Sections
@@ -305,13 +304,6 @@ try:
                 recommendations = generate_recommendations(df, centre)
                 st.markdown(recommendations)
 
-        # Data Table - only for selected centres
-        st.header("Complete Dataset")
-        with st.expander("📋 Complete Market Data", expanded=False):
-            st.dataframe(df_selected.sort_values(['Centre', 'Sale No']),
-                         use_container_width=True,
-                         hide_index=True)
-
     else:
         # Show placeholders and instructions when no file is uploaded
         st.info("Upload a file above to start analyzing your tea market data")
@@ -329,10 +321,6 @@ try:
         st.markdown(
             "AI-powered market analysis will be generated here after data upload"
         )
-
-        # Placeholder for data view
-        st.header("Detailed Data View")
-        st.markdown("Detailed data table will be shown here after file upload")
 
 except Exception as e:
     st.error("""
