@@ -3,16 +3,15 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import numpy as np
-from utils import (
-    process_excel_data, generate_insights,
-    generate_price_analysis, generate_market_insights,
-    generate_volume_analysis, generate_recommendations
-)
+from utils import (process_excel_data, generate_price_analysis, 
+                  generate_market_insights, generate_volume_analysis, 
+                  generate_recommendations, generate_ai_narrative)
 from styles import apply_custom_styles
 import os
 
 # Setup page config
-st.set_page_config(page_title="CTC Tea Sales Analytics Dashboard", layout="wide")
+st.set_page_config(page_title="CTC Tea Sales Analytics Dashboard",
+                   layout="wide")
 apply_custom_styles()
 
 # Add title with description
@@ -264,8 +263,13 @@ try:
         for centre in selected_centres:
             st.subheader(f"{centre} Analysis")
             
+            # AI-powered Narrative Analysis Section
+            with st.expander("🤖 AI Market Analysis", expanded=True):
+                narrative = generate_ai_narrative(df, centre)
+                st.markdown(narrative)
+            
             # Price Analysis Section
-            with st.expander("🏷️ Price Analysis", expanded=True):
+            with st.expander("🏷️ Price Analysis", expanded=False):
                 price_analysis = generate_price_analysis(df, centre)
                 st.markdown(price_analysis)
             
@@ -286,11 +290,12 @@ try:
         
         # Data Table - only for selected centres
         st.header("Detailed Data View")
-        st.dataframe(
-            df_selected.sort_values(['Centre', 'Sale No']),
-            use_container_width=True,
-            hide_index=True
-        )
+        with st.expander("📋 Detailed Market Data", expanded=False):
+            st.dataframe(
+                df_selected.sort_values(['Centre', 'Sale No']),
+                use_container_width=True,
+                hide_index=True
+            )
     
     else:
         # Show placeholders and instructions when no file is uploaded
