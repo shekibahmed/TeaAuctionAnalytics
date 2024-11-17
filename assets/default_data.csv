@@ -1,25 +1,25 @@
 Centre,Sale No,Sales Price(Kg),Sold Qty (Ton),Unsold Qty (Ton)
-North India,40,246,9699,2735
-North India,42,244,8724,3019
-North India,43,235,7420,2843
-North India,44,240,5085,2364
-North India,45,228,7332,4484
-North India,46,223,8422,4604
-South India,40,238,8500,2200
-South India,42,235,7800,2800
-South India,43,230,6900,2500
-South India,44,233,4800,2100
-South India,45,225,6800,4000
-South India,46,220,7500,4200
-East India,40,242,7800,2100
-East India,42,238,7200,2500
-East India,43,232,6500,2300
-East India,44,235,4500,2000
-East India,45,228,6200,3800
-East India,46,225,7000,4000
-West India,40,240,8200,2400
-West India,42,237,7500,2600
-West India,43,233,6700,2400
-West India,44,236,4700,2200
-West India,45,226,6500,3900
-West India,46,222,7200,4100
+North India CTC Leaf,40,246,9699,2735
+North India CTC Leaf,42,244,8724,3019
+North India CTC Leaf,43,235,7420,2843
+North India CTC Leaf,44,240,5085,2364
+North India CTC Leaf,45,228,7332,4484
+North India CTC Leaf,46,223,8422,4604
+North India CTC Dust,40,250,5500,1500
+North India CTC Dust,42,248,5200,1800
+North India CTC Dust,43,242,4800,1600
+North India CTC Dust,44,245,3500,1400
+North India CTC Dust,45,235,4800,2500
+North India CTC Dust,46,230,5100,2800
+South India CTC Leaf,40,238,8500,2200
+South India CTC Leaf,42,235,7800,2800
+South India CTC Leaf,43,230,6900,2500
+South India CTC Leaf,44,233,4800,2100
+South India CTC Leaf,45,225,6800,4000
+South India CTC Leaf,46,220,7500,4200
+South India CTC Dust,40,242,4800,1200
+South India CTC Dust,42,240,4500,1500
+South India CTC Dust,43,235,4200,1300
+South India CTC Dust,44,238,3200,1100
+South India CTC Dust,45,230,4100,2200
+South India CTC Dust,46,225,4500,2400
