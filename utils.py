@@ -1,21 +1,91 @@
 import pandas as pd
 import numpy as np
-from typing import List, Dict
+from typing import List, Dict, Tuple
 import openai
 import os
+import logging
+
+def get_closest_match(column: str, possible_matches: List[str]) -> Tuple[str, float]:
+    """Find the closest matching column name based on string similarity"""
+    from difflib import SequenceMatcher
+    
+    # Convert to lowercase for comparison
+    column_lower = column.lower().strip()
+    scores = [(match, SequenceMatcher(None, column_lower, match.lower().strip()).ratio())
+             for match in possible_matches]
+    return max(scores, key=lambda x: x[1])
 
 def process_excel_data(file):
     """Process uploaded Excel file and return formatted DataFrame"""
-    if file.name.endswith('.csv'):
-        df = pd.read_csv(file)
-    else:
-        df = pd.read_excel(file)
+    # Column name variations mapping
+    column_variations = {
+        'Centre': ['Centre', 'Center', 'center', 'centre', 'Market Center', 'Market Centre', 'Location'],
+        'Sale No': ['Sale No', 'Sale Number', 'Sale_No', 'SaleNo', 'Sale #', 'Sale'],
+        'Sales Price(Kg)': ['Sales Price(Kg)', 'Price/Kg', 'Price (Kg)', 'Sales Price', 'Price'],
+        'Sold Qty (Ton)': ['Sold Qty (Ton)', 'Sold Quantity', 'Sold_Qty', 'Sold Amount', 'Quantity Sold'],
+        'Unsold Qty (Ton)': ['Unsold Qty (Ton)', 'Unsold Quantity', 'Unsold_Qty', 'Unsold Amount', 'Quantity Unsold']
+    }
     
-    required_columns = ['Centre', 'Sale No', 'Sales Price(Kg)', 'Sold Qty (Ton)', 'Unsold Qty (Ton)']
+    required_columns = list(column_variations.keys())
     
-    # Validate columns
-    if not all(col in df.columns for col in required_columns):
-        raise ValueError("Upload file must contain all required columns: Centre, Sale No, Sales Price(Kg), Sold Qty (Ton), Unsold Qty (Ton)")
+    # Read the file
+    try:
+        if file.name.endswith('.csv'):
+            df = pd.read_csv(file)
+        else:
+            df = pd.read_excel(file)
+    except Exception as e:
+        raise ValueError(f"Error reading file: {str(e)}")
+    
+    # Print actual columns for debugging
+    print("\nActual columns in uploaded file:", df.columns.tolist())
+    
+    # Map columns to standard names
+    column_mapping = {}
+    missing_columns = []
+    unmapped_columns = []
+    
+    for required_col in required_columns:
+        variations = column_variations[required_col]
+        found = False
+        
+        # First try exact matches
+        for var in variations:
+            if var in df.columns:
+                column_mapping[var] = required_col
+                found = True
+                break
+        
+        # If no exact match, try fuzzy matching
+        if not found:
+            potential_matches = [(col, get_closest_match(col, variations)) 
+                               for col in df.columns if col not in column_mapping.keys()]
+            best_match = max(potential_matches, key=lambda x: x[1][1]) if potential_matches else (None, (None, 0))
+            
+            if best_match[1][1] > 0.8:  # Threshold for similarity
+                column_mapping[best_match[0]] = required_col
+                found = True
+            else:
+                missing_columns.append(required_col)
+        
+        if not found:
+            missing_columns.append(required_col)
+    
+    # Check for unmapped columns
+    unmapped_columns = [col for col in df.columns if col not in column_mapping]
+    
+    # Generate detailed error message if needed
+    if missing_columns:
+        error_msg = "\nMissing required columns:\n"
+        for col in missing_columns:
+            error_msg += f"- {col} (accepted variations: {', '.join(column_variations[col])})\n"
+        if unmapped_columns:
+            error_msg += "\nUnmapped columns in your file:\n"
+            error_msg += ", ".join(unmapped_columns)
+        raise ValueError(error_msg)
+    
+    # Rename columns to standard names
+    df = df.rename(columns=column_mapping)
     
     # Clean and format data
     df = df[required_columns]
@@ -150,37 +220,40 @@ def analyze_comparatives(df: pd.DataFrame, centre: str) -> List[str]:
 
 def generate_ai_narrative(df: pd.DataFrame, centre: str) -> str:
     """Generate AI-powered narrative market analysis"""
-    client = openai.OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
-    
-    # Prepare market data summary
-    centre_df = df[df['Centre'] == centre].sort_values('Sale No').copy()
-    latest_sale = centre_df['Sale No'].max()
-    latest_data = centre_df[centre_df['Sale No'] == latest_sale].iloc[0]
-    
-    # Calculate key metrics
-    price_change = centre_df['Sales Price(Kg)'].pct_change().mean()
-    volume_change = (centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)']).pct_change().mean()
-    efficiency = latest_data['Sold Qty (Ton)'] / (latest_data['Sold Qty (Ton)'] + latest_data['Unsold Qty (Ton)'])
-    
-    # Create market context
-    market_context = f"""
-    Market: {centre}
-    Latest Sale: {latest_sale}
-    Current Price: ₹{latest_data['Sales Price(Kg)']:.2f}/Kg
-    Price Trend: {price_change*100:.1f}% average change
-    Volume Trend: {volume_change*100:.1f}% average change
-    Market Efficiency: {efficiency*100:.1f}%
-    """
-    
-    # Generate AI analysis
-    prompt = f"""You are a tea market analyst. Analyze the following tea market data and provide a concise, insightful narrative analysis focusing on key trends and market implications. Use a professional tone.
+    try:
+        if 'OPENAI_API_KEY' not in os.environ:
+            return "AI narrative generation unavailable: OpenAI API key not found in environment variables."
+        
+        client = openai.OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
+        
+        # Prepare market data summary
+        centre_df = df[df['Centre'] == centre].sort_values('Sale No').copy()
+        latest_sale = centre_df['Sale No'].max()
+        latest_data = centre_df[centre_df['Sale No'] == latest_sale].iloc[0]
+        
+        # Calculate key metrics
+        price_change = centre_df['Sales Price(Kg)'].pct_change().mean()
+        volume_change = (centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)']).pct_change().mean()
+        efficiency = latest_data['Sold Qty (Ton)'] / (latest_data['Sold Qty (Ton)'] + latest_data['Unsold Qty (Ton)'])
+        
+        # Create market context
+        market_context = f"""
+        Market: {centre}
+        Latest Sale: {latest_sale}
+        Current Price: ₹{latest_data['Sales Price(Kg)']:.2f}/Kg
+        Price Trend: {price_change*100:.1f}% average change
+        Volume Trend: {volume_change*100:.1f}% average change
+        Market Efficiency: {efficiency*100:.1f}%
+        """
+        
+        # Generate AI analysis
+        prompt = f"""You are a tea market analyst. Analyze the following tea market data and provide a concise, insightful narrative analysis focusing on key trends and market implications. Use a professional tone.
 
 Market Data:
 {market_context}
 
 Provide a 2-3 sentence analysis highlighting the most important insights and potential market implications."""
-
-    try:
+        
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}],
@@ -189,34 +262,43 @@ Provide a 2-3 sentence analysis highlighting the most important insights and pot
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
-        return f"AI narrative generation unavailable: {str(e)}"
+        logging.error(f"Error in AI narrative generation: {str(e)}")
+        return f"AI narrative generation encountered an error: {str(e)}"
 
 def generate_insights(df: pd.DataFrame) -> List[str]:
     """Generate comprehensive market insights with levels, trends, comparatives, and AI narrative"""
     all_insights = []
     
-    for centre in sorted(df['Centre'].unique()):
-        region, tea_type = centre.split(' CTC ')
-        all_insights.append(f"\n=== {region} CTC {tea_type} Analysis ===\n")
+    try:
+        for centre in sorted(df['Centre'].unique()):
+            region, tea_type = centre.split(' CTC ')
+            all_insights.append(f"\n=== {region} CTC {tea_type} Analysis ===\n")
+            
+            try:
+                # AI Narrative Analysis
+                ai_narrative = generate_ai_narrative(df, centre)
+                all_insights.append("--- AI Market Analysis ---")
+                all_insights.append(ai_narrative)
+                all_insights.append("")
+            except Exception as e:
+                logging.error(f"Error in AI narrative for {centre}: {str(e)}")
+                all_insights.append("AI narrative analysis temporarily unavailable")
+            
+            # Level Analysis
+            all_insights.append("--- Market Levels ---")
+            all_insights.extend(analyze_levels(df, centre))
+            
+            # Trend Analysis
+            all_insights.append("\n--- Market Trends ---")
+            all_insights.extend(analyze_trends(df, centre))
+            
+            # Comparative Analysis
+            all_insights.append("\n--- Market Comparatives ---")
+            all_insights.extend(analyze_comparatives(df, centre))
+            
+            all_insights.append("\n" + "="*50 + "\n")
         
-        # AI Narrative Analysis
-        ai_narrative = generate_ai_narrative(df, centre)
-        all_insights.append("--- AI Market Analysis ---")
-        all_insights.append(ai_narrative)
-        all_insights.append("")
-        
-        # Level Analysis
-        all_insights.append("--- Market Levels ---")
-        all_insights.extend(analyze_levels(df, centre))
-        
-        # Trend Analysis
-        all_insights.append("\n--- Market Trends ---")
-        all_insights.extend(analyze_trends(df, centre))
-        
-        # Comparative Analysis
-        all_insights.append("\n--- Market Comparatives ---")
-        all_insights.extend(analyze_comparatives(df, centre))
-        
-        all_insights.append("\n" + "="*50 + "\n")
-    
-    return all_insights
+        return all_insights
+    except Exception as e:
+        logging.error(f"Error generating insights: {str(e)}")
+        return [f"Error generating insights: {str(e)}"]

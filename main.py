@@ -5,12 +5,18 @@ from plotly.subplots import make_subplots
 import numpy as np
 from utils import process_excel_data, generate_insights
 from styles import apply_custom_styles
+import os
 
 # Setup page config
 st.set_page_config(page_title="CTC Tea Sales Analytics Dashboard", layout="wide")
 apply_custom_styles()
 
+# Add title with description
 st.title("CTC Tea Sales Analytics Dashboard")
+st.markdown("""
+This dashboard provides comprehensive analysis of CTC tea sales across North and South India markets,
+featuring AI-powered market insights and traditional market metrics.
+""")
 
 # File upload section
 uploaded_file = st.file_uploader("Upload Excel File", type=['xlsx', 'xls', 'csv'])
@@ -238,14 +244,37 @@ try:
                 f"{efficiency:.1f}%"
             )
     
-    # Automated Insights - only for selected centres
-    st.subheader("Market Insights")
-    insights = generate_insights(df_selected)
-    for insight in insights:
-        st.info(insight)
+    # Market Insights with AI Analysis
+    st.header("Market Insights")
+    st.markdown("""
+    Below are comprehensive market insights generated through AI analysis, including:
+    - AI-powered Market Analysis
+    - Market Level Analysis
+    - Trend Analysis
+    - Comparative Market Analysis
+    """)
+    
+    # Check for OpenAI API key
+    if 'OPENAI_API_KEY' not in os.environ:
+        st.warning("⚠️ OpenAI API key not found. AI-powered analysis will be limited.")
+    
+    # Generate and display insights with error handling
+    try:
+        insights = generate_insights(df_selected)
+        for insight in insights:
+            if "AI narrative generation" in insight and "error" in insight.lower():
+                st.error(insight)
+            elif "=== " in insight and " ===" in insight:
+                st.subheader(insight.strip("= \n"))
+            elif "--- " in insight and " ---" in insight:
+                st.markdown(f"**{insight.strip('- ')}**")
+            else:
+                st.markdown(insight)
+    except Exception as e:
+        st.error(f"Error generating market insights: {str(e)}")
     
     # Data Table - only for selected centres
-    st.subheader("Detailed Data View")
+    st.header("Detailed Data View")
     st.dataframe(
         df_selected.sort_values(['Centre', 'Sale No']),
         use_container_width=True,
