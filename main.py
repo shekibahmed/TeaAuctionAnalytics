@@ -24,75 +24,108 @@ if uploaded_file is not None:
 else:
     df = pd.read_csv('assets/default_data.csv')
 
-# Dashboard Layout
-col1, col2 = st.columns([2, 1])
+# Create charts for each centre
+centres = sorted(df['Centre'].unique())
+num_centres = len(centres)
+rows = (num_centres + 1) // 2  # Calculate number of rows needed (2 charts per row)
 
-with col1:
-    # Main Trend Chart
-    fig = make_subplots(specs=[[{"secondary_y": True}]])
+# Create subplot grid
+fig = make_subplots(
+    rows=rows, 
+    cols=2,
+    specs=[[{"secondary_y": True}] * 2] * rows,
+    subplot_titles=[f"{centre} Leaf Trends" for centre in centres]
+)
+
+# Create charts for each centre
+for idx, centre in enumerate(centres):
+    row = idx // 2 + 1
+    col = idx % 2 + 1
+    
+    centre_df = df[df['Centre'] == centre]
     
     # Bar charts for Sold and Unsold
     fig.add_trace(
-        go.Bar(name='Sold Qty (Ton)', x=df['Sale No'], y=df['Sold Qty (Ton)'],
-               marker_color='#FF9966'),
-        secondary_y=False,
+        go.Bar(
+            name='Sold Qty (Ton)', 
+            x=centre_df['Sale No'], 
+            y=centre_df['Sold Qty (Ton)'],
+            marker_color='#FF9966',
+            showlegend=(idx == 0)  # Show legend only for first centre
+        ),
+        row=row, col=col,
+        secondary_y=False
     )
     
     fig.add_trace(
-        go.Bar(name='Unsold Qty (Ton)', x=df['Sale No'], y=df['Unsold Qty (Ton)'],
-               marker_color='#808080'),
-        secondary_y=False,
+        go.Bar(
+            name='Unsold Qty (Ton)', 
+            x=centre_df['Sale No'], 
+            y=centre_df['Unsold Qty (Ton)'],
+            marker_color='#808080',
+            showlegend=(idx == 0)
+        ),
+        row=row, col=col,
+        secondary_y=False
     )
     
     # Line chart for Sales Price
     fig.add_trace(
-        go.Scatter(name='Sales Price (₹)', x=df['Sale No'], y=df['Sales Price (₹)'],
-                  line=dict(color='#3366CC', width=2)),
-        secondary_y=True,
+        go.Scatter(
+            name='Sales Price (Kg)', 
+            x=centre_df['Sale No'], 
+            y=centre_df['Sales Price(Kg)'],
+            line=dict(color='#3366CC', width=2),
+            showlegend=(idx == 0)
+        ),
+        row=row, col=col,
+        secondary_y=True
     )
-    
-    fig.update_layout(
-        title='North India CTC Leaf Trends',
-        barmode='group',
-        hovermode='x unified',
-        template='plotly_white',
-        height=500
-    )
-    
-    fig.update_xaxes(title_text='Sale No')
-    fig.update_yaxes(title_text='Quantity (Tons)', secondary_y=False)
-    fig.update_yaxes(title_text='Price (₹)', secondary_y=True)
-    
-    st.plotly_chart(fig, use_container_width=True)
 
-with col2:
-    # Summary Metrics
-    st.subheader("Key Metrics")
+# Update layout
+fig.update_layout(
+    height=400 * rows,
+    width=1200,
+    barmode='group',
+    hovermode='x unified',
+    template='plotly_white',
+    margin=dict(t=50, b=20, l=60, r=60)
+)
+
+# Update axes labels for all subplots
+for i in range(1, rows + 1):
+    for j in range(1, 3):
+        if (i-1)*2 + j <= num_centres:  # Only update if subplot exists
+            fig.update_xaxes(title_text='Sale No', row=i, col=j)
+            fig.update_yaxes(title_text='Quantity (Tons)', secondary_y=False, row=i, col=j)
+            fig.update_yaxes(title_text='Price (₹/Kg)', secondary_y=True, row=i, col=j)
+
+st.plotly_chart(fig, use_container_width=True)
+
+# Summary Metrics
+st.subheader("Key Metrics by Centre")
+
+# Create metrics for each centre
+metrics_cols = st.columns(len(centres))
+
+for idx, (col, centre) in enumerate(zip(metrics_cols, centres)):
+    centre_df = df[df['Centre'] == centre]
     
-    metrics_col1, metrics_col2 = st.columns(2)
-    
-    with metrics_col1:
+    with col:
+        st.markdown(f"**{centre}**")
         st.metric(
             "Avg Sales Price",
-            f"₹{df['Sales Price (₹)'].mean():.2f}",
-            f"{df['Sales Price (₹)'].pct_change().mean()*100:.1f}%"
+            f"₹{centre_df['Sales Price(Kg)'].mean():.2f}/Kg",
+            f"{centre_df['Sales Price(Kg)'].pct_change().mean()*100:.1f}%"
         )
         st.metric(
             "Total Sold Qty",
-            f"{df['Sold Qty (Ton)'].sum():,.0f} Tons",
-            f"{df['Sold Qty (Ton)'].pct_change().mean()*100:.1f}%"
-        )
-    
-    with metrics_col2:
-        st.metric(
-            "Avg Sold Qty",
-            f"{df['Sold Qty (Ton)'].mean():,.0f} Tons",
-            f"{df['Sold Qty (Ton)'].pct_change().mean()*100:.1f}%"
+            f"{centre_df['Sold Qty (Ton)'].sum():,.0f} Tons",
+            f"{centre_df['Sold Qty (Ton)'].pct_change().mean()*100:.1f}%"
         )
         st.metric(
-            "Total Unsold Qty",
-            f"{df['Unsold Qty (Ton)'].sum():,.0f} Tons",
-            f"{df['Unsold Qty (Ton)'].pct_change().mean()*100:.1f}%"
+            "Market Efficiency",
+            f"{(centre_df['Sold Qty (Ton)'].sum() / (centre_df['Sold Qty (Ton)'].sum() + centre_df['Unsold Qty (Ton)'].sum()) * 100):.1f}%"
         )
 
 # Automated Insights
@@ -104,7 +137,7 @@ for insight in insights:
 # Data Table
 st.subheader("Detailed Data View")
 st.dataframe(df.style.format({
-    'Sales Price (₹)': '₹{:.2f}',
+    'Sales Price(Kg)': '₹{:.2f}',
     'Sold Qty (Ton)': '{:,.0f}',
     'Unsold Qty (Ton)': '{:,.0f}'
 }), use_container_width=True)

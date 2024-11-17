@@ -1,7 +1,13 @@
-Sale No,Sold Qty (Ton),Unsold Qty (Ton),Sales Price (₹)
-40,9699,2735,246
-42,8724,3019,244
-43,7420,2843,235
-44,5085,2364,240
-45,7332,4484,228
-46,8422,4604,223
+Centre,Sale No,Sales Price(Kg),Sold Qty (Ton),Unsold Qty (Ton)
+North India,40,246,9699,2735
+North India,42,244,8724,3019
+North India,43,235,7420,2843
+North India,44,240,5085,2364
+North India,45,228,7332,4484
+North India,46,223,8422,4604
+South India,40,238,8500,2200
+South India,42,235,7800,2800
+South India,43,230,6900,2500
+South India,44,233,4800,2100
+South India,45,225,6800,4000
+South India,46,220,7500,4200
