@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
 from typing import List, Dict
+import openai
+import os
 
 def process_excel_data(file):
     """Process uploaded Excel file and return formatted DataFrame"""
@@ -146,13 +148,62 @@ def analyze_comparatives(df: pd.DataFrame, centre: str) -> List[str]:
     
     return insights
 
+def generate_ai_narrative(df: pd.DataFrame, centre: str) -> str:
+    """Generate AI-powered narrative market analysis"""
+    client = openai.OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
+    
+    # Prepare market data summary
+    centre_df = df[df['Centre'] == centre].sort_values('Sale No').copy()
+    latest_sale = centre_df['Sale No'].max()
+    latest_data = centre_df[centre_df['Sale No'] == latest_sale].iloc[0]
+    
+    # Calculate key metrics
+    price_change = centre_df['Sales Price(Kg)'].pct_change().mean()
+    volume_change = (centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)']).pct_change().mean()
+    efficiency = latest_data['Sold Qty (Ton)'] / (latest_data['Sold Qty (Ton)'] + latest_data['Unsold Qty (Ton)'])
+    
+    # Create market context
+    market_context = f"""
+    Market: {centre}
+    Latest Sale: {latest_sale}
+    Current Price: ₹{latest_data['Sales Price(Kg)']:.2f}/Kg
+    Price Trend: {price_change*100:.1f}% average change
+    Volume Trend: {volume_change*100:.1f}% average change
+    Market Efficiency: {efficiency*100:.1f}%
+    """
+    
+    # Generate AI analysis
+    prompt = f"""You are a tea market analyst. Analyze the following tea market data and provide a concise, insightful narrative analysis focusing on key trends and market implications. Use a professional tone.
+
+Market Data:
+{market_context}
+
+Provide a 2-3 sentence analysis highlighting the most important insights and potential market implications."""
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7,
+            max_tokens=150
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        return f"AI narrative generation unavailable: {str(e)}"
+
 def generate_insights(df: pd.DataFrame) -> List[str]:
-    """Generate comprehensive market insights with levels, trends, and comparatives"""
+    """Generate comprehensive market insights with levels, trends, comparatives, and AI narrative"""
     all_insights = []
     
     for centre in sorted(df['Centre'].unique()):
         region, tea_type = centre.split(' CTC ')
         all_insights.append(f"\n=== {region} CTC {tea_type} Analysis ===\n")
+        
+        # AI Narrative Analysis
+        ai_narrative = generate_ai_narrative(df, centre)
+        all_insights.append("--- AI Market Analysis ---")
+        all_insights.append(ai_narrative)
+        all_insights.append("")
         
         # Level Analysis
         all_insights.append("--- Market Levels ---")
