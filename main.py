@@ -102,7 +102,7 @@ try:
                                   line=dict(color='#3366CC', width=2)),
                        row=1, col=1, secondary_y=True)
 
-            # Add table trace with headers
+            # Add table trace
             table_data = centre_df.sort_values('Sale No', ascending=True).copy()
             fig.add_trace(
                 go.Table(
@@ -117,7 +117,7 @@ try:
                         align=['center'] * 4,
                         format=[None, 'd', 'd', 'd'],
                         height=25,
-                        line=dict(width=0),
+                        line=dict(width=0)
                     ),
                     columnwidth=[1, 1, 1, 1]
                 ),
@@ -131,7 +131,7 @@ try:
                 barmode='group',
                 hovermode='x unified',
                 template='plotly_white',
-                margin=dict(t=30, b=0, l=60, r=60),
+                margin=dict(t=30, b=50, l=60, r=60),  # Increased bottom margin
                 showlegend=True
             )
 
@@ -151,7 +151,7 @@ try:
                     for centre in selected_centres
                 ],
                 vertical_spacing=0.02,
-                row_heights=[0.425, 0.075] * rows
+                row_heights=[0.4, 0.1] * rows  # Adjusted ratio between chart and table
             )
 
             for idx, centre in enumerate(selected_centres):
@@ -197,7 +197,7 @@ try:
                     row=chart_row, col=col, secondary_y=True
                 )
 
-                # Add table trace with headers
+                # Add table trace
                 table_data = centre_df.sort_values('Sale No', ascending=True).copy()
                 fig.add_trace(
                     go.Table(
@@ -212,7 +212,7 @@ try:
                             align=['center'] * 4,
                             format=[None, 'd', 'd', 'd'],
                             height=25,
-                            line=dict(width=0),
+                            line=dict(width=0)
                         ),
                         columnwidth=[1, 1, 1, 1]
                     ),
@@ -230,7 +230,7 @@ try:
                 barmode='group',
                 hovermode='x unified',
                 template='plotly_white',
-                margin=dict(t=50, b=0, l=60, r=60),
+                margin=dict(t=50, b=50, l=60, r=60),  # Increased bottom margin
                 showlegend=True
             )
 
