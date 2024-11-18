@@ -453,6 +453,62 @@ def generate_pdf_report(df: pd.DataFrame, centre: str) -> bytes:
     buffer.seek(0)
     return buffer.getvalue()
 
+def calculate_correlations(df: pd.DataFrame, centre: str) -> pd.DataFrame:
+    """Calculate correlations between different metrics for a given centre"""
+    centre_df = df[df['Centre'] == centre].copy()
+    
+    # Calculate additional metrics
+    centre_df['Total Volume'] = centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)']
+    centre_df['Market Efficiency'] = centre_df['Sold Qty (Ton)'] / centre_df['Total Volume']
+    centre_df['Price Change'] = centre_df['Sales Price(Kg)'].pct_change()
+    centre_df['Volume Change'] = centre_df['Total Volume'].pct_change()
+    
+    # Select metrics for correlation
+    correlation_metrics = [
+        'Sales Price(Kg)',
+        'Total Volume',
+        'Market Efficiency',
+        'Price Change',
+        'Volume Change',
+        'Sold Qty (Ton)',
+        'Unsold Qty (Ton)'
+    ]
+    
+    # Calculate correlation matrix
+    correlation_matrix = centre_df[correlation_metrics].corr()
+    
+    return correlation_matrix
+
+def analyze_key_correlations(df: pd.DataFrame, centre: str) -> List[str]:
+    """Analyze and explain key correlations between metrics"""
+    correlation_matrix = calculate_correlations(df, centre)
+    insights = []
+    
+    # Analyze price correlations
+    price_vol_corr = correlation_matrix.loc['Sales Price(Kg)', 'Total Volume']
+    price_eff_corr = correlation_matrix.loc['Sales Price(Kg)', 'Market Efficiency']
+    
+    insights.append("Price Correlations:")
+    insights.append(f"• Price-Volume Correlation: {price_vol_corr:.2f}")
+    if abs(price_vol_corr) > 0.5:
+        direction = "positive" if price_vol_corr > 0 else "negative"
+        insights.append(f"  - Strong {direction} relationship between price and volume")
+    
+    insights.append(f"• Price-Efficiency Correlation: {price_eff_corr:.2f}")
+    if abs(price_eff_corr) > 0.5:
+        direction = "positive" if price_eff_corr > 0 else "negative"
+        insights.append(f"  - Strong {direction} relationship between price and market efficiency")
+    
+    # Analyze volume correlations
+    vol_eff_corr = correlation_matrix.loc['Total Volume', 'Market Efficiency']
+    insights.append("\nVolume Correlations:")
+    insights.append(f"• Volume-Efficiency Correlation: {vol_eff_corr:.2f}")
+    if abs(vol_eff_corr) > 0.5:
+        direction = "positive" if vol_eff_corr > 0 else "negative"
+        insights.append(f"  - Strong {direction} relationship between volume and market efficiency")
+    
+    return insights
+
 if __name__ == "__main__":
     # Example usage
     df = process_excel_data('your_file.xlsx')

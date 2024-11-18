@@ -5,7 +5,8 @@ from plotly.subplots import make_subplots
 import numpy as np
 from utils import (process_excel_data, generate_price_analysis,
                    generate_market_insights, generate_ai_narrative,
-                   analyze_levels, analyze_trends, analyze_comparatives, generate_pdf_report)
+                   analyze_levels, analyze_trends, analyze_comparatives,
+                   calculate_correlations, analyze_key_correlations)
 from styles import apply_custom_styles
 import os
 
@@ -294,10 +295,94 @@ try:
         for centre in selected_centres:
             st.subheader(f"{centre} Statistical Analysis")
             
-            # Create three columns for Levels, Trends, and Comparatives
-            col1, col2, col3 = st.columns(3)
+            # Create tabs for different analyses
+            tabs = st.tabs(["Correlation Analysis", "Levels", "Trends", "Comparatives"])
             
-            with col1:
+            # Correlation Analysis Tab
+            with tabs[0]:
+                st.markdown("### Correlation Analysis")
+                
+                # Calculate correlation matrix
+                corr_matrix = calculate_correlations(df, centre)
+                
+                # Create correlation heatmap
+                heatmap_fig = go.Figure(data=go.Heatmap(
+                    z=corr_matrix.values,
+                    x=corr_matrix.columns,
+                    y=corr_matrix.index,
+                    colorscale='RdBu',
+                    zmin=-1, zmax=1,
+                    text=np.round(corr_matrix.values, 2),
+                    texttemplate='%{text}',
+                    textfont={"size": 10},
+                    hoverongaps=False
+                ))
+                
+                heatmap_fig.update_layout(
+                    title="Metric Correlations Heatmap",
+                    height=500,
+                    width=700,
+                    xaxis={'tickangle': 45}
+                )
+                
+                st.plotly_chart(heatmap_fig)
+                
+                # Display key correlation insights
+                st.markdown("#### Key Correlation Insights")
+                correlation_insights = analyze_key_correlations(df, centre)
+                for insight in correlation_insights:
+                    st.markdown(insight)
+                
+                # Interactive Scatter Plot
+                st.markdown("#### Interactive Correlation Scatter Plot")
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    x_metric = st.selectbox(
+                        "Select X-axis Metric",
+                        options=corr_matrix.columns,
+                        key=f"x_metric_{centre}"
+                    )
+                
+                with col2:
+                    y_metric = st.selectbox(
+                        "Select Y-axis Metric",
+                        options=[col for col in corr_matrix.columns if col != x_metric],
+                        key=f"y_metric_{centre}"
+                    )
+                
+                centre_df = df[df['Centre'] == centre].copy()
+                centre_df['Total Volume'] = centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)']
+                centre_df['Market Efficiency'] = centre_df['Sold Qty (Ton)'] / centre_df['Total Volume']
+                centre_df['Price Change'] = centre_df['Sales Price(Kg)'].pct_change()
+                centre_df['Volume Change'] = centre_df['Total Volume'].pct_change()
+                
+                scatter_fig = go.Figure(data=go.Scatter(
+                    x=centre_df[x_metric],
+                    y=centre_df[y_metric],
+                    mode='markers+text',
+                    text=centre_df['Sale No'],
+                    textposition='top center',
+                    marker=dict(
+                        size=10,
+                        color=centre_df['Sale No'],
+                        colorscale='Viridis',
+                        showscale=True,
+                        colorbar=dict(title="Sale No")
+                    )
+                ))
+                
+                scatter_fig.update_layout(
+                    title=f"Correlation: {x_metric} vs {y_metric}",
+                    xaxis_title=x_metric,
+                    yaxis_title=y_metric,
+                    height=500
+                )
+                
+                st.plotly_chart(scatter_fig, use_container_width=True)
+            
+            # Levels Analysis Tab
+            with tabs[1]:
                 st.markdown("### Price and Volume Levels")
                 levels_data = analyze_levels(df, centre)
                 
@@ -401,7 +486,7 @@ try:
                 for insight in levels_data:
                     st.markdown(insight)
             
-            with col2:
+            with tabs[2]:
                 st.markdown("### Market Trends")
                 trends_data = analyze_trends(df, centre)
                 
@@ -497,7 +582,7 @@ try:
                 for insight in trends_data:
                     st.markdown(insight)
             
-            with col3:
+            with tabs[3]:
                 st.markdown("### Market Comparatives")
                 comparatives_data = analyze_comparatives(df, centre)
                 
