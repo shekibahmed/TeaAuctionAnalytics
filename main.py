@@ -464,6 +464,33 @@ try:
                             height=300
                         )
                         st.plotly_chart(share_fig, use_container_width=True)
+                        
+                        # Add market share pie chart
+                        market_share_fig = go.Figure()
+                        
+                        # Calculate market shares
+                        centre_vol = centre_df['Sold Qty (Ton)'].sum()
+                        other_vol = other_df['Sold Qty (Ton)'].sum()
+                        total_vol = centre_vol + other_vol
+                        
+                        centre_share = (centre_vol / total_vol * 100) if total_vol > 0 else 0
+                        other_share = (other_vol / total_vol * 100) if total_vol > 0 else 0
+                        
+                        market_share_fig.add_trace(go.Pie(
+                            labels=[f'{tea_type} ({centre_share:.1f}%)', 
+                                   f'{other_type} ({other_share:.1f}%)'],
+                            values=[centre_vol, other_vol],
+                            textinfo='label+percent',
+                            hoverinfo='label+value+percent',
+                            marker=dict(colors=['blue', 'green'])
+                        ))
+                        
+                        market_share_fig.update_layout(
+                            title=f"Market Share Distribution ({region})",
+                            height=300,
+                            showlegend=False
+                        )
+                        st.plotly_chart(market_share_fig, use_container_width=True)
                     
                     # Detailed metrics
                     st.markdown("\n".join(comparatives_data))
@@ -478,6 +505,18 @@ try:
                     file_name=f"{centre}_market_report.pdf",
                     mime="application/pdf"
                 )
+
+    else:
+        # Show placeholders and instructions when no file is uploaded
+        st.info("Upload a file above to start analyzing your tea market data")
+        
+        # Placeholder for charts
+        st.header("Market Trends")
+        st.markdown("Charts will appear here after uploading data")
+        
+        # Placeholder for metrics
+        st.header("Key Metrics by Market")
+        st.markdown("Market metrics will be displayed here after data upload")
 
 except Exception as e:
     st.error(f"An error occurred: {str(e)}")
