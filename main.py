@@ -6,7 +6,7 @@ import numpy as np
 from utils import (process_excel_data, generate_price_analysis,
                    generate_market_insights, generate_volume_analysis,
                    generate_recommendations, generate_ai_narrative,
-                   analyze_levels, analyze_trends, analyze_comparatives)
+                   analyze_levels, analyze_trends, analyze_comparatives, generate_pdf_report)  # Update import
 from styles import apply_custom_styles
 import os
 
@@ -375,14 +375,25 @@ try:
                 
                 st.markdown("\n".join(comparatives_data))
 
-        # Market Insights with Expandable Sections
-        st.header("Market Insights")
-        st.markdown("""
-        Click on each section below to view detailed market analysis:
-        """)
+            # Add Download PDF Report Button
+            st.markdown("### Download Statistical Report")
+            if st.button(f"Generate PDF Report for {centre}"):
+                pdf_data = generate_pdf_report(df, centre)
+                st.download_button(
+                    label="Download PDF Report",
+                    data=pdf_data,
+                    file_name=f"{centre}_market_analysis.pdf",
+                    mime="application/pdf"
+                )
+            st.markdown("---")  # Add separator
 
-        for centre in selected_centres:
-            st.subheader(f"{centre} Analysis")
+            # Continue with existing market insights section
+            st.markdown("""
+            Click on each section below to view detailed market analysis:
+            """)
+
+            for centre in selected_centres:
+                st.subheader(f"{centre} Analysis")
 
             # AI-powered Narrative Analysis Section
             with st.expander("🤖 AI Market Analysis", expanded=True):

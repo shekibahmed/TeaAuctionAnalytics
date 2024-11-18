@@ -10,5 +10,6 @@ dependencies = [
     "pandas==2.1.3",
     "plotly-express",
     "plotly==5.18.0",
+    "reportlab>=4.2.5",
     "streamlit==1.29.0",
 ]

@@ -567,3 +567,81 @@ def generate_insights(df: pd.DataFrame) -> List[str]:
     except Exception as e:
         logging.error(f"Error generating insights: {str(e)}")
         return [f"Error generating insights: {str(e)}"]
+
+def generate_pdf_report(df: pd.DataFrame, centre: str) -> bytes:
+    """Generate a PDF report with statistical analysis for the selected market"""
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import letter
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from io import BytesIO
+    
+    # Create PDF buffer
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    styles = getSampleStyleSheet()
+    story = []
+
+    # Title
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=24,
+        spaceAfter=30
+    )
+    story.append(Paragraph(f"Market Analysis Report - {centre}", title_style))
+    story.append(Spacer(1, 20))
+
+    # Add Levels Analysis
+    story.append(Paragraph("Price and Volume Levels Analysis", styles['Heading2']))
+    levels_data = analyze_levels(df, centre)
+    for insight in levels_data:
+        story.append(Paragraph(insight, styles['Normal']))
+    story.append(Spacer(1, 20))
+
+    # Add Trends Analysis
+    story.append(Paragraph("Market Trends Analysis", styles['Heading2']))
+    trends_data = analyze_trends(df, centre)
+    for insight in trends_data:
+        story.append(Paragraph(insight, styles['Normal']))
+    story.append(Spacer(1, 20))
+
+    # Add Comparatives Analysis
+    story.append(Paragraph("Market Comparatives Analysis", styles['Heading2']))
+    comparatives_data = analyze_comparatives(df, centre)
+    for insight in comparatives_data:
+        story.append(Paragraph(insight, styles['Normal']))
+    story.append(Spacer(1, 20))
+
+    # Add Statistical Data Table
+    story.append(Paragraph("Statistical Data Summary", styles['Heading2']))
+    centre_df = df[df['Centre'] == centre].sort_values('Sale No').tail(5)  # Last 5 sales
+    table_data = [['Sale No', 'Price (₹/Kg)', 'Sold Qty (Ton)', 'Unsold Qty (Ton)']]
+    for _, row in centre_df.iterrows():
+        table_data.append([
+            str(int(row['Sale No'])),
+            f"{row['Sales Price(Kg)']:.2f}",
+            f"{row['Sold Qty (Ton)']:.1f}",
+            f"{row['Unsold Qty (Ton)']:.1f}"
+        ])
+    
+    table = Table(table_data)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 14),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 12),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    story.append(table)
+
+    # Generate PDF
+    doc.build(story)
+    buffer.seek(0)
+    return buffer.getvalue()
