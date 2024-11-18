@@ -5,7 +5,8 @@ from plotly.subplots import make_subplots
 import numpy as np
 from utils import (process_excel_data, generate_price_analysis,
                    generate_market_insights, generate_volume_analysis,
-                   generate_recommendations, generate_ai_narrative)
+                   generate_recommendations, generate_ai_narrative,
+                   analyze_levels, analyze_trends, analyze_comparatives)
 from styles import apply_custom_styles
 import os
 
@@ -253,31 +254,126 @@ try:
         # Display charts with integrated tables
         st.plotly_chart(fig, use_container_width=True)
 
-        # Summary Metrics
-        st.subheader("Key Metrics by Market")
-        metrics_cols = st.columns(len(selected_centres))
-
-        for idx, (col, centre) in enumerate(zip(metrics_cols, selected_centres)):
-            centre_df = df_selected[df_selected['Centre'] == centre].copy()
-            region, tea_type = centre.split(' CTC ')
-
-            with col:
-                st.markdown(f"**{region} CTC {tea_type}**")
-
+        # Statistical Analysis Section
+        st.header("Statistical Analysis")
+        
+        for centre in selected_centres:
+            st.subheader(f"{centre} Statistical Analysis")
+            
+            # Create three columns for Levels, Trends, and Comparatives
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                st.markdown("### Price and Volume Levels")
+                levels_data = analyze_levels(df, centre)
+                
+                # Create Levels Chart
+                centre_df = df[df['Centre'] == centre].copy()
+                latest_sale = centre_df['Sale No'].max()
+                latest_data = centre_df[centre_df['Sale No'] == latest_sale].iloc[0]
+                
+                levels_fig = go.Figure()
+                
+                # Add price level indicator
                 avg_price = centre_df['Sales Price(Kg)'].mean()
-                price_change = centre_df['Sales Price(Kg)'].pct_change().mean()
-                total_sold = centre_df['Sold Qty (Ton)'].sum()
-                sold_change = centre_df['Sold Qty (Ton)'].pct_change().mean()
-                total_qty = total_sold + centre_df['Unsold Qty (Ton)'].sum()
-                efficiency = (total_sold / total_qty * 100) if total_qty > 0 else 0
-
-                st.metric(
-                    "Avg Sales Price", f"₹{avg_price:.2f}/Kg",
-                    f"{price_change*100:.1f}%" if pd.notna(price_change) else None)
-                st.metric(
-                    "Total Sold Qty", f"{total_sold:,.0f} Tons",
-                    f"{sold_change*100:.1f}%" if pd.notna(sold_change) else None)
-                st.metric("Market Efficiency", f"{efficiency:.1f}%")
+                levels_fig.add_trace(go.Indicator(
+                    mode="number+gauge",
+                    value=latest_data['Sales Price(Kg)'],
+                    title={'text': "Current Price vs Average"},
+                    gauge={
+                        'axis': {'range': [None, max(centre_df['Sales Price(Kg)']) * 1.2]},
+                        'steps': [
+                            {'range': [0, avg_price], 'color': "lightgray"},
+                            {'range': [avg_price, max(centre_df['Sales Price(Kg)']) * 1.2], 'color': "gray"}
+                        ],
+                        'threshold': {
+                            'line': {'color': "red", 'width': 4},
+                            'thickness': 0.75,
+                            'value': avg_price
+                        }
+                    }
+                ))
+                
+                levels_fig.update_layout(height=300)
+                st.plotly_chart(levels_fig, use_container_width=True)
+                st.markdown("\n".join(levels_data))
+            
+            with col2:
+                st.markdown("### Market Trends")
+                trends_data = analyze_trends(df, centre)
+                
+                # Create Trends Chart
+                centre_df = centre_df.sort_values('Sale No')
+                trends_fig = go.Figure()
+                
+                # Add price trend line
+                trends_fig.add_trace(go.Scatter(
+                    x=centre_df['Sale No'],
+                    y=centre_df['Sales Price(Kg)'],
+                    name='Price Trend',
+                    line=dict(color='blue')
+                ))
+                
+                # Add trend line
+                z = np.polyfit(range(len(centre_df)), centre_df['Sales Price(Kg)'], 1)
+                p = np.poly1d(z)
+                trends_fig.add_trace(go.Scatter(
+                    x=centre_df['Sale No'],
+                    y=p(range(len(centre_df))),
+                    name='Trend Line',
+                    line=dict(color='red', dash='dash')
+                ))
+                
+                trends_fig.update_layout(
+                    title="Price Trend Analysis",
+                    xaxis_title="Sale No",
+                    yaxis_title="Price (₹/Kg)",
+                    height=300
+                )
+                st.plotly_chart(trends_fig, use_container_width=True)
+                st.markdown("\n".join(trends_data))
+            
+            with col3:
+                st.markdown("### Market Comparatives")
+                comparatives_data = analyze_comparatives(df, centre)
+                
+                # Create Comparatives Chart
+                region, tea_type = centre.split(' CTC ')
+                other_type = 'Dust' if tea_type == 'Leaf' else 'Leaf'
+                other_centre = f"{region} CTC {other_type}"
+                
+                if other_centre in df['Centre'].unique():
+                    comp_fig = go.Figure()
+                    
+                    # Current market data
+                    centre_df = df[df['Centre'] == centre].copy()
+                    other_df = df[df['Centre'] == other_centre].copy()
+                    
+                    # Add current market price line
+                    comp_fig.add_trace(go.Scatter(
+                        x=centre_df['Sale No'],
+                        y=centre_df['Sales Price(Kg)'],
+                        name=f'{tea_type} Price',
+                        line=dict(color='blue')
+                    ))
+                    
+                    # Add comparative market price line
+                    comp_fig.add_trace(go.Scatter(
+                        x=other_df['Sale No'],
+                        y=other_df['Sales Price(Kg)'],
+                        name=f'{other_type} Price',
+                        line=dict(color='green')
+                    ))
+                    
+                    comp_fig.update_layout(
+                        title="Price Comparison Analysis",
+                        xaxis_title="Sale No",
+                        yaxis_title="Price (₹/Kg)",
+                        height=300
+                    )
+                    st.plotly_chart(comp_fig, use_container_width=True)
+                
+                st.markdown("\n".join(comparatives_data))
 
         # Market Insights with Expandable Sections
         st.header("Market Insights")
