@@ -254,7 +254,42 @@ try:
         # Display charts with integrated tables
         st.plotly_chart(fig, use_container_width=True)
 
-        # Statistical Analysis Section with Interactive Drill-down
+        # AI-Powered Market Analysis Section (Now above Statistical Analysis)
+        st.markdown("---")  # Add separator
+        st.header("AI-Powered Market Analysis")
+        
+        for centre in selected_centres:
+            st.subheader(f"{centre} Market Analysis")
+            
+            # Market Narrative in a row
+            st.markdown("### 🤖 Market Narrative")
+            narrative = generate_ai_narrative(df, centre)
+            st.markdown(f"""
+            <div style='background-color: #f0f2f6; padding: 1.5rem; border-radius: 0.5rem; margin-bottom: 1rem;'>
+            {narrative}
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Price Analysis in a row
+            st.markdown("### 📈 Price Analysis")
+            price_analysis = generate_price_analysis(df, centre)
+            st.markdown(f"""
+            <div style='background-color: #f0f2f6; padding: 1.5rem; border-radius: 0.5rem; margin-bottom: 1rem;'>
+            {price_analysis}
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Market Insights in a row
+            st.markdown("### 🔍 Market Insights")
+            market_insights = generate_market_insights(df, centre)
+            st.markdown(f"""
+            <div style='background-color: #f0f2f6; padding: 1.5rem; border-radius: 0.5rem; margin-bottom: 2rem;'>
+            {market_insights}
+            </div>
+            """, unsafe_allow_html=True)
+
+        # Statistical Analysis Section with Enhanced Interactive Drill-down
+        st.markdown("---")  # Add separator
         st.header("Statistical Analysis")
         
         for centre in selected_centres:
@@ -267,26 +302,52 @@ try:
                 st.markdown("### Price and Volume Levels")
                 levels_data = analyze_levels(df, centre)
                 
-                # Create expandable section for detailed levels analysis
+                # Create expandable section for detailed levels analysis with enhanced interactivity
                 with st.expander("Click for Detailed Levels Analysis", expanded=False):
                     centre_df = df[df['Centre'] == centre].copy()
-                    latest_sale = centre_df['Sale No'].max()
-                    latest_data = centre_df[centre_df['Sale No'] == latest_sale].iloc[0]
                     
-                    # Price Distribution Chart
+                    # Add date range selector for levels analysis
+                    st.markdown("#### Select Date Range for Analysis")
+                    min_sale = int(centre_df['Sale No'].min())
+                    max_sale = int(centre_df['Sale No'].max())
+                    selected_range = st.slider(
+                        "Sale Number Range",
+                        min_value=min_sale,
+                        max_value=max_sale,
+                        value=(min_sale, max_sale),
+                        key=f"levels_range_{centre}"
+                    )
+                    
+                    # Filter data based on selection
+                    filtered_df = centre_df[
+                        (centre_df['Sale No'] >= selected_range[0]) &
+                        (centre_df['Sale No'] <= selected_range[1])
+                    ]
+                    
+                    # Price Distribution Chart with dynamic binning
+                    num_bins = st.select_slider(
+                        "Number of Price Distribution Bins",
+                        options=[5, 10, 15, 20, 25, 30],
+                        value=20,
+                        key=f"price_bins_{centre}"
+                    )
+                    
                     price_dist_fig = go.Figure()
                     price_dist_fig.add_trace(go.Histogram(
-                        x=centre_df['Sales Price(Kg)'],
+                        x=filtered_df['Sales Price(Kg)'],
                         name='Price Distribution',
-                        nbinsx=20,
+                        nbinsx=num_bins,
                         marker_color='blue'
                     ))
+                    
+                    latest_data = filtered_df.iloc[-1]
                     price_dist_fig.add_vline(
                         x=latest_data['Sales Price(Kg)'],
                         line_dash="dash",
                         line_color="red",
                         annotation_text="Current Price"
                     )
+                    
                     price_dist_fig.update_layout(
                         title="Price Distribution Analysis",
                         xaxis_title="Price (₹/Kg)",
@@ -295,22 +356,41 @@ try:
                     )
                     st.plotly_chart(price_dist_fig, use_container_width=True)
                     
-                    # Volume Analysis
+                    # Volume Analysis with aggregation options
+                    volume_agg = st.radio(
+                        "Volume Aggregation",
+                        ["None", "Moving Average", "Cumulative"],
+                        key=f"volume_agg_{centre}"
+                    )
+                    
                     volume_fig = go.Figure()
+                    
+                    if volume_agg == "None":
+                        y_sold = filtered_df['Sold Qty (Ton)']
+                        y_unsold = filtered_df['Unsold Qty (Ton)']
+                    elif volume_agg == "Moving Average":
+                        window = st.slider("Moving Average Window", 2, 10, 5, key=f"ma_window_{centre}")
+                        y_sold = filtered_df['Sold Qty (Ton)'].rolling(window=window).mean()
+                        y_unsold = filtered_df['Unsold Qty (Ton)'].rolling(window=window).mean()
+                    else:  # Cumulative
+                        y_sold = filtered_df['Sold Qty (Ton)'].cumsum()
+                        y_unsold = filtered_df['Unsold Qty (Ton)'].cumsum()
+                    
                     volume_fig.add_trace(go.Scatter(
-                        x=centre_df['Sale No'],
-                        y=centre_df['Sold Qty (Ton)'],
+                        x=filtered_df['Sale No'],
+                        y=y_sold,
                         name='Sold Volume',
                         line=dict(color='green')
                     ))
                     volume_fig.add_trace(go.Scatter(
-                        x=centre_df['Sale No'],
-                        y=centre_df['Unsold Qty (Ton)'],
+                        x=filtered_df['Sale No'],
+                        y=y_unsold,
                         name='Unsold Volume',
                         line=dict(color='red')
                     ))
+                    
                     volume_fig.update_layout(
-                        title="Volume Analysis Over Time",
+                        title=f"Volume Analysis Over Time ({volume_agg if volume_agg != 'None' else 'Raw Data'})",
                         xaxis_title="Sale No",
                         yaxis_title="Volume (Tons)",
                         height=300
@@ -324,67 +404,81 @@ try:
                 st.markdown("### Market Trends")
                 trends_data = analyze_trends(df, centre)
                 
-                # Create expandable section for detailed trends analysis
+                # Create expandable section for detailed trends analysis with enhanced interactivity
                 with st.expander("Click for Detailed Trends Analysis", expanded=False):
-                    centre_df = centre_df.sort_values('Sale No')
+                    # Allow users to select trend analysis type
+                    trend_type = st.selectbox(
+                        "Select Trend Analysis Type",
+                        ["Price Trends", "Volume Trends", "Market Efficiency"],
+                        key=f"trend_type_{centre}"
+                    )
                     
-                    # Price Trend Analysis
+                    # Allow users to customize trend line options
+                    show_trend_line = st.checkbox("Show Trend Line", value=True, key=f"trend_line_{centre}")
+                    show_ma = st.checkbox("Show Moving Average", value=True, key=f"ma_{centre}")
+                    
+                    if show_ma:
+                        ma_window = st.slider(
+                            "Moving Average Window",
+                            min_value=2,
+                            max_value=10,
+                            value=5,
+                            key=f"ma_window_trends_{centre}"
+                        )
+                    
                     trends_fig = go.Figure()
                     
-                    # Add actual price line
+                    if trend_type == "Price Trends":
+                        y_data = filtered_df['Sales Price(Kg)']
+                        title = "Price Trends Analysis"
+                        y_label = "Price (₹/Kg)"
+                    elif trend_type == "Volume Trends":
+                        y_data = filtered_df['Sold Qty (Ton)']
+                        title = "Volume Trends Analysis"
+                        y_label = "Volume (Tons)"
+                    else:  # Market Efficiency
+                        y_data = filtered_df['Sold Qty (Ton)'] / (filtered_df['Sold Qty (Ton)'] + filtered_df['Unsold Qty (Ton)'])
+                        title = "Market Efficiency Trends"
+                        y_label = "Efficiency Ratio"
+                    
+                    # Add actual data line
                     trends_fig.add_trace(go.Scatter(
-                        x=centre_df['Sale No'],
-                        y=centre_df['Sales Price(Kg)'],
-                        name='Actual Price',
+                        x=filtered_df['Sale No'],
+                        y=y_data,
+                        name='Actual Data',
                         line=dict(color='blue')
                     ))
                     
-                    # Add trend line
-                    z = np.polyfit(range(len(centre_df)), centre_df['Sales Price(Kg)'], 1)
-                    p = np.poly1d(z)
-                    trends_fig.add_trace(go.Scatter(
-                        x=centre_df['Sale No'],
-                        y=p(range(len(centre_df))),
-                        name='Linear Trend',
-                        line=dict(color='red', dash='dash')
-                    ))
+                    # Add trend line if selected
+                    if show_trend_line:
+                        z = np.polyfit(range(len(filtered_df)), y_data, 1)
+                        p = np.poly1d(z)
+                        trends_fig.add_trace(go.Scatter(
+                            x=filtered_df['Sale No'],
+                            y=p(range(len(filtered_df))),
+                            name='Linear Trend',
+                            line=dict(color='red', dash='dash')
+                        ))
                     
-                    # Add moving average
-                    ma_window = min(5, len(centre_df))
-                    moving_avg = centre_df['Sales Price(Kg)'].rolling(window=ma_window).mean()
-                    trends_fig.add_trace(go.Scatter(
-                        x=centre_df['Sale No'],
-                        y=moving_avg,
-                        name=f'{ma_window}-Sale Moving Average',
-                        line=dict(color='green', dash='dot')
-                    ))
+                    # Add moving average if selected
+                    if show_ma:
+                        moving_avg = y_data.rolling(window=ma_window).mean()
+                        trends_fig.add_trace(go.Scatter(
+                            x=filtered_df['Sale No'],
+                            y=moving_avg,
+                            name=f'{ma_window}-Sale Moving Average',
+                            line=dict(color='green', dash='dot')
+                        ))
                     
                     trends_fig.update_layout(
-                        title="Detailed Price Trend Analysis",
+                        title=title,
                         xaxis_title="Sale No",
-                        yaxis_title="Price (₹/Kg)",
+                        yaxis_title=y_label,
                         height=300
                     )
                     st.plotly_chart(trends_fig, use_container_width=True)
                     
-                    # Volume Trend Analysis
-                    volume_trends_fig = go.Figure()
-                    volume_trends_fig.add_trace(go.Scatter(
-                        x=centre_df['Sale No'],
-                        y=centre_df['Sold Qty (Ton)'] / (centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)']),
-                        name='Market Efficiency',
-                        line=dict(color='purple')
-                    ))
-                    volume_trends_fig.update_layout(
-                        title="Market Efficiency Trend",
-                        xaxis_title="Sale No",
-                        yaxis_title="Efficiency Ratio",
-                        height=300,
-                        yaxis=dict(tickformat='.0%')
-                    )
-                    st.plotly_chart(volume_trends_fig, use_container_width=True)
-                    
-                    # Detailed metrics
+                    # Display trend metrics
                     st.markdown("\n".join(trends_data))
             
             with col3:
@@ -398,135 +492,123 @@ try:
                     other_centre = f"{region} CTC {other_type}"
                     
                     if other_centre in df['Centre'].unique():
-                        centre_df = df[df['Centre'] == centre].copy()
+                        # Add comparison metric selector
+                        comparison_metric = st.selectbox(
+                            "Select Comparison Metric",
+                            ["Price", "Volume", "Market Efficiency"],
+                            key=f"comp_metric_{centre}"
+                        )
+                        
+                        # Get data for both centres
+                        centre_df = filtered_df
                         other_df = df[df['Centre'] == other_centre].copy()
+                        other_df = other_df[
+                            (other_df['Sale No'] >= selected_range[0]) &
+                            (other_df['Sale No'] <= selected_range[1])
+                        ]
                         
-                        # Price Comparison Chart
-                        price_fig = go.Figure()
-                        price_fig.add_trace(go.Scatter(
-                            x=centre_df['Sale No'],
-                            y=centre_df['Sales Price(Kg)'],
-                            name=f'{tea_type} Price',
-                            line=dict(color='blue')
-                        ))
-                        price_fig.add_trace(go.Scatter(
-                            x=other_df['Sale No'],
-                            y=other_df['Sales Price(Kg)'],
-                            name=f'{other_type} Price',
-                            line=dict(color='red')
-                        ))
-                        price_fig.update_layout(
-                            title=f"Price Comparison: {tea_type} vs {other_type}",
+                        comp_fig = go.Figure()
+                        
+                        if comparison_metric == "Price":
+                            comp_fig.add_trace(go.Scatter(
+                                x=centre_df['Sale No'],
+                                y=centre_df['Sales Price(Kg)'],
+                                name=f'{tea_type} Price',
+                                line=dict(color='blue')
+                            ))
+                            comp_fig.add_trace(go.Scatter(
+                                x=other_df['Sale No'],
+                                y=other_df['Sales Price(Kg)'],
+                                name=f'{other_type} Price',
+                                line=dict(color='red')
+                            ))
+                            title = "Price Comparison"
+                            y_label = "Price (₹/Kg)"
+                            
+                        elif comparison_metric == "Volume":
+                            comp_fig.add_trace(go.Bar(
+                                x=centre_df['Sale No'],
+                                y=centre_df['Sold Qty (Ton)'],
+                                name=f'{tea_type} Volume',
+                                marker_color='blue'
+                            ))
+                            comp_fig.add_trace(go.Bar(
+                                x=other_df['Sale No'],
+                                y=other_df['Sold Qty (Ton)'],
+                                name=f'{other_type} Volume',
+                                marker_color='red'
+                            ))
+                            title = "Volume Comparison"
+                            y_label = "Volume (Tons)"
+                            
+                        else:  # Market Efficiency
+                            centre_eff = centre_df['Sold Qty (Ton)'] / (centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)'])
+                            other_eff = other_df['Sold Qty (Ton)'] / (other_df['Sold Qty (Ton)'] + other_df['Unsold Qty (Ton)'])
+                            
+                            comp_fig.add_trace(go.Scatter(
+                                x=centre_df['Sale No'],
+                                y=centre_eff,
+                                name=f'{tea_type} Efficiency',
+                                line=dict(color='blue')
+                            ))
+                            comp_fig.add_trace(go.Scatter(
+                                x=other_df['Sale No'],
+                                y=other_eff,
+                                name=f'{other_type} Efficiency',
+                                line=dict(color='red')
+                            ))
+                            title = "Market Efficiency Comparison"
+                            y_label = "Efficiency Ratio"
+                        
+                        comp_fig.update_layout(
+                            title=title,
                             xaxis_title="Sale No",
-                            yaxis_title="Price (₹/Kg)",
+                            yaxis_title=y_label,
                             height=300
                         )
-                        st.plotly_chart(price_fig, use_container_width=True)
+                        st.plotly_chart(comp_fig, use_container_width=True)
                         
-                        # Volume Comparison Chart
-                        vol_fig = go.Figure()
-                        vol_fig.add_trace(go.Bar(
-                            x=centre_df['Sale No'],
-                            y=centre_df['Sold Qty (Ton)'],
-                            name=f'{tea_type} Volume',
-                            marker_color='blue'
-                        ))
-                        vol_fig.add_trace(go.Bar(
-                            x=other_df['Sale No'],
-                            y=other_df['Sold Qty (Ton)'],
-                            name=f'{other_type} Volume',
-                            marker_color='red'
-                        ))
-                        vol_fig.update_layout(
-                            title=f"Volume Comparison: {tea_type} vs {other_type}",
-                            xaxis_title="Sale No",
-                            yaxis_title="Volume (Tons)",
-                            height=300,
-                            barmode='group'
-                        )
-                        st.plotly_chart(vol_fig, use_container_width=True)
-                        
-                        # Market Efficiency Comparison
-                        share_fig = go.Figure()
-                        share_fig.add_trace(go.Scatter(
-                            x=centre_df['Sale No'],
-                            y=centre_df['Sold Qty (Ton)'] / (centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)']),
-                            name=f'{tea_type} Efficiency',
-                            line=dict(color='blue')
-                        ))
-                        share_fig.add_trace(go.Scatter(
-                            x=other_df['Sale No'],
-                            y=other_df['Sold Qty (Ton)'] / (other_df['Sold Qty (Ton)'] + other_df['Unsold Qty (Ton)']),
-                            name=f'{other_type} Efficiency',
-                            line=dict(color='red')
-                        ))
-                        share_fig.update_layout(
-                            title=f"Market Efficiency Comparison: {tea_type} vs {other_type}",
-                            xaxis_title="Sale No",
-                            yaxis_title="Efficiency Ratio",
-                            height=300
-                        )
-                        st.plotly_chart(share_fig, use_container_width=True)
+                        # Show detailed comparative metrics
+                        st.markdown("\n".join(comparatives_data))
                     
-                    # Detailed metrics
-                    st.markdown("\n".join(comparatives_data))
-            
-            # Add Download PDF Report Button
-            st.markdown("### Download Statistical Report")
-            if st.button(f"Generate PDF Report for {centre}"):
-                pdf_data = generate_pdf_report(df, centre)
+                    else:
+                        st.warning(f"No comparison data available for {other_centre}")
+
+        # Download Report Section
+        st.markdown("---")
+        st.header("Download Analysis Report")
+        
+        # Allow user to select centres for report
+        report_centres = st.multiselect(
+            "Select Markets for Report",
+            options=selected_centres,
+            default=selected_centres[0] if selected_centres else None,
+            key="report_centres"
+        )
+        
+        if report_centres:
+            if st.button("Generate PDF Report"):
+                pdf_file = generate_pdf_report(df, report_centres)
                 st.download_button(
-                    label=f"Download {centre} Report",
-                    data=pdf_data,
+                    label="Download PDF Report",
+                    data=pdf_file,
                     file_name=f"{centre}_market_report.pdf",
                     mime="application/pdf"
                 )
 
-            # AI Analysis Section
-            st.markdown("---")  # Add separator
-            st.header("AI-Powered Market Analysis")
-            
-            # Create three columns for different analyses
-            ai_col1, ai_col2, ai_col3 = st.columns(3)
-            
-            with ai_col1:
-                st.markdown("### 🤖 Market Narrative")
-                narrative = generate_ai_narrative(df, centre)
-                st.markdown(f"""
-                <div style='background-color: #f0f2f6; padding: 1rem; border-radius: 0.5rem;'>
-                {narrative}
-                </div>
-                """, unsafe_allow_html=True)
-            
-            with ai_col2:
-                st.markdown("### 📈 Price Analysis")
-                price_analysis = generate_price_analysis(df, centre)
-                st.markdown(f"""
-                <div style='background-color: #f0f2f6; padding: 1rem; border-radius: 0.5rem;'>
-                {price_analysis}
-                </div>
-                """, unsafe_allow_html=True)
-            
-            with ai_col3:
-                st.markdown("### 🔍 Market Insights")
-                market_insights = generate_market_insights(df, centre)
-                st.markdown(f"""
-                <div style='background-color: #f0f2f6; padding: 1rem; border-radius: 0.5rem;'>
-                {market_insights}
-                </div>
-                """, unsafe_allow_html=True)
-
     else:
         # Show placeholders and instructions when no file is uploaded
-        st.info("Upload a file above to start analyzing your tea market data")
-        
-        # Placeholder for charts
-        st.header("Market Trends")
-        st.markdown("Charts will appear here after uploading data")
-        
-        # Placeholder for metrics
-        st.header("Key Metrics by Market")
-        st.markdown("Market metrics will be displayed here after data upload")
+        st.info("Please upload an Excel file to begin analysis.")
+        st.markdown("""
+        ### Expected File Format:
+        The Excel file should contain the following columns:
+        - Centre
+        - Sale No
+        - Sales Price(Kg)
+        - Sold Qty (Ton)
+        - Unsold Qty (Ton)
+        """)
 
 except Exception as e:
     st.error(f"An error occurred: {str(e)}")
+    logging.error(f"Error in main app: {str(e)}")
