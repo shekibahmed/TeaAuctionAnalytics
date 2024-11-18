@@ -265,10 +265,8 @@ try:
             st.markdown("### 🤖 Market Narrative")
             narrative = generate_ai_narrative(df, centre)
             st.markdown(f"""
-            <div class="analysis-section" id="market-narrative">
-                <div class="analysis-content">
-                    {narrative}
-                </div>
+            <div style='background-color: #f0f2f6; padding: 1.5rem; border-radius: 0.5rem; margin-bottom: 1rem;'>
+            {narrative}
             </div>
             """, unsafe_allow_html=True)
             
@@ -276,10 +274,8 @@ try:
             st.markdown("### 📈 Price Analysis")
             price_analysis = generate_price_analysis(df, centre)
             st.markdown(f"""
-            <div class="analysis-section" id="price-analysis">
-                <div class="analysis-content">
-                    {price_analysis}
-                </div>
+            <div style='background-color: #f0f2f6; padding: 1.5rem; border-radius: 0.5rem; margin-bottom: 1rem;'>
+            {price_analysis}
             </div>
             """, unsafe_allow_html=True)
             
@@ -287,10 +283,8 @@ try:
             st.markdown("### 🔍 Market Insights")
             market_insights = generate_market_insights(df, centre)
             st.markdown(f"""
-            <div class="analysis-section" id="market-insights">
-                <div class="analysis-content">
-                    {market_insights}
-                </div>
+            <div style='background-color: #f0f2f6; padding: 1.5rem; border-radius: 0.5rem; margin-bottom: 2rem;'>
+            {market_insights}
             </div>
             """, unsafe_allow_html=True)
 
