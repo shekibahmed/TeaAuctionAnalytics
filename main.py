@@ -69,8 +69,8 @@ try:
                 rows=2, 
                 cols=1,
                 specs=[[{"secondary_y": True}], [{"type": "table"}]],
-                row_heights=[0.7, 0.3],
-                vertical_spacing=0.1
+                row_heights=[0.85, 0.15],
+                vertical_spacing=0.02
             )
             
             centre = selected_centres[0]
@@ -102,43 +102,40 @@ try:
                                   line=dict(color='#3366CC', width=2)),
                        row=1, col=1, secondary_y=True)
 
-            # Add table trace
+            # Add table trace with headers
             table_data = centre_df.sort_values('Sale No', ascending=True).copy()
             fig.add_trace(
                 go.Table(
-                    header=dict(
-                        values=['Sale No', 'Price (₹/Kg)', 'Sold Qty (Tons)', 'Unsold Qty (Tons)'],
-                        font=dict(size=12, color='white'),
-                        fill_color='#1F4E79',
-                        align=['center', 'right', 'right', 'right']
-                    ),
                     cells=dict(
                         values=[
-                            table_data['Sale No'],
-                            table_data['Sales Price(Kg)'].round(2).apply(lambda x: f'₹{x:.2f}'),
-                            table_data['Sold Qty (Ton)'].round(2),
-                            table_data['Unsold Qty (Ton)'].round(2)
+                            ['Sale No'] + table_data['Sale No'].tolist(),
+                            ['Sold Qty'] + table_data['Sold Qty (Ton)'].round(0).astype(int).tolist(),
+                            ['Unsold Qty'] + table_data['Unsold Qty (Ton)'].round(0).astype(int).tolist(),
+                            ['Price'] + table_data['Sales Price(Kg)'].round(0).astype(int).tolist()
                         ],
-                        font=dict(size=11),
-                        align=['center', 'right', 'right', 'right'],
-                        format=[None, None, '.2f', '.2f'],
-                        height=25
-                    )
+                        font=dict(size=10),
+                        align=['center'] * 4,
+                        format=[None, 'd', 'd', 'd'],
+                        height=25,
+                        line=dict(width=0),
+                    ),
+                    columnwidth=[1, 1, 1, 1]
                 ),
                 row=2, col=1
             )
 
             # Update layout for single chart
             fig.update_layout(
-                title=f"{region} CTC {tea_type} Market Trends",
+                title=f"{region} CTC {tea_type} Trends",
                 height=800,
                 barmode='group',
                 hovermode='x unified',
                 template='plotly_white',
-                margin=dict(t=30, b=0, l=60, r=60)
+                margin=dict(t=30, b=0, l=60, r=60),
+                showlegend=True
             )
 
-            fig.update_xaxes(title_text='Sale No', row=1, col=1)
+            fig.update_xaxes(title_text='Sale No', row=1, col=1, showgrid=True)
             fig.update_yaxes(title_text='Quantity (Tons)', secondary_y=False, row=1, col=1)
             fig.update_yaxes(title_text='Price (₹/Kg)', secondary_y=True, row=1, col=1)
 
@@ -150,11 +147,11 @@ try:
                 cols=min(2, num_centres),
                 specs=[[{"secondary_y": True}, {"secondary_y": True}] if i % 2 == 0 else [{"type": "table"}, {"type": "table"}] for i in range(rows * 2)],
                 subplot_titles=[
-                    f"{centre.split(' CTC ')[0]} CTC {centre.split(' CTC ')[1]} Market Trends"
+                    f"{centre.split(' CTC ')[0]} CTC {centre.split(' CTC ')[1]} Trends"
                     for centre in selected_centres
                 ],
-                vertical_spacing=0.1,
-                row_heights=[0.35, 0.15] * rows
+                vertical_spacing=0.02,
+                row_heights=[0.425, 0.075] * rows
             )
 
             for idx, centre in enumerate(selected_centres):
@@ -200,34 +197,30 @@ try:
                     row=chart_row, col=col, secondary_y=True
                 )
 
-                # Add table trace
+                # Add table trace with headers
                 table_data = centre_df.sort_values('Sale No', ascending=True).copy()
                 fig.add_trace(
                     go.Table(
-                        header=dict(
-                            values=['Sale No', 'Price (₹/Kg)', 'Sold Qty (Tons)', 'Unsold Qty (Tons)'],
-                            font=dict(size=11, color='white'),
-                            fill_color='#1F4E79',
-                            align=['center', 'right', 'right', 'right']
-                        ),
                         cells=dict(
                             values=[
-                                table_data['Sale No'],
-                                table_data['Sales Price(Kg)'].round(2).apply(lambda x: f'₹{x:.2f}'),
-                                table_data['Sold Qty (Ton)'].round(2),
-                                table_data['Unsold Qty (Ton)'].round(2)
+                                ['Sale No'] + table_data['Sale No'].tolist(),
+                                ['Sold Qty'] + table_data['Sold Qty (Ton)'].round(0).astype(int).tolist(),
+                                ['Unsold Qty'] + table_data['Unsold Qty (Ton)'].round(0).astype(int).tolist(),
+                                ['Price'] + table_data['Sales Price(Kg)'].round(0).astype(int).tolist()
                             ],
-                            font=dict(size=10),
-                            align=['center', 'right', 'right', 'right'],
-                            format=[None, None, '.2f', '.2f'],
-                            height=25
-                        )
+                            font=dict(size=9),
+                            align=['center'] * 4,
+                            format=[None, 'd', 'd', 'd'],
+                            height=25,
+                            line=dict(width=0),
+                        ),
+                        columnwidth=[1, 1, 1, 1]
                     ),
                     row=table_row, col=col
                 )
 
                 # Update axes labels
-                fig.update_xaxes(title_text='Sale No', row=chart_row, col=col)
+                fig.update_xaxes(title_text='Sale No', row=chart_row, col=col, showgrid=True)
                 fig.update_yaxes(title_text='Quantity (Tons)', secondary_y=False, row=chart_row, col=col)
                 fig.update_yaxes(title_text='Price (₹/Kg)', secondary_y=True, row=chart_row, col=col)
 
