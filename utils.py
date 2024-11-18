@@ -267,11 +267,12 @@ def generate_ai_narrative(df: pd.DataFrame, centre: str) -> str:
         Market Efficiency: {recent_efficiency*100:.1f}%
         """
         
-        prompt = f"""You are a tea market analyst. Analyze the following tea market data and provide 3-4 detailed sentences covering:
+        prompt = f"""You are a tea market analyst. Analyze the following tea market data and provide 3-4 key insights.
+Format each insight as a bullet point starting with '• '.
+Cover:
 1. Current price trends and market position
 2. Volume dynamics and market efficiency
 3. Future market outlook based on current indicators
-4. Key factors influencing market behavior
 
 Market Data:
 {market_context}"""
@@ -285,7 +286,7 @@ Market Data:
         return response.choices[0].message.content.strip()
     except Exception as e:
         logging.error(f"Error in AI narrative generation: {str(e)}")
-        return f"AI narrative generation encountered an error: {str(e)}"
+        return f"• AI narrative generation encountered an error: {str(e)}"
 
 def generate_price_analysis(df: pd.DataFrame, centre: str) -> str:
     """Generate detailed price analysis including trends, seasonality, and forecasts"""
@@ -325,7 +326,9 @@ def generate_price_analysis(df: pd.DataFrame, centre: str) -> str:
         Seasonal Pattern: {seasonal_pattern}
         """
         
-        prompt = f"""You are a tea market price analyst. Analyze the following price data and provide 4-5 detailed insights focusing on:
+        prompt = f"""You are a tea market price analyst. Analyze the following price data and provide 4-5 key insights.
+Format each insight as a bullet point starting with '• '.
+Focus on:
 1. Current price position and historical context
 2. Price volatility and market stability
 3. Seasonal patterns and cyclical behavior
@@ -346,7 +349,7 @@ Market Data:
         return response.choices[0].message.content.strip()
     except Exception as e:
         logging.error(f"Error in price analysis: {str(e)}")
-        return "Price analysis currently unavailable. Please try again later."
+        return "• Price analysis currently unavailable. Please try again later."
 
 def generate_market_insights(df: pd.DataFrame, centre: str) -> str:
     """Generate market position and competitive analysis insights"""
@@ -375,7 +378,9 @@ def generate_market_insights(df: pd.DataFrame, centre: str) -> str:
         Market Stability: {market_stability*100:.1f}%
         """
         
-        prompt = f"""You are a tea market analyst. Analyze the following market data and provide 3-4 detailed insights focusing on:
+        prompt = f"""You are a tea market analyst. Analyze the following market data and provide 3-4 key insights.
+Format each insight as a bullet point starting with '• '.
+Focus on:
 1. Market position and competitive strength
 2. Operational efficiency and market absorption
 3. Growth trends and market dynamics
@@ -395,7 +400,7 @@ Market Data:
         return response.choices[0].message.content.strip()
     except Exception as e:
         logging.error(f"Error in market insights: {str(e)}")
-        return "Market insights currently unavailable. Please try again later."
+        return "• Market insights currently unavailable. Please try again later."
 
 def generate_pdf_report(df: pd.DataFrame, centre: str) -> bytes:
     """Generate a PDF report with statistical analysis for the selected market"""
