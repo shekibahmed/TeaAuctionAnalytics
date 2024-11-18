@@ -243,19 +243,35 @@ def generate_ai_narrative(df: pd.DataFrame, centre: str) -> str:
         client = openai.OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
         centre_df = df[df['Centre'] == centre].sort_values('Sale No').copy()
         
-        # Calculate key metrics
+        # Calculate comprehensive metrics
         current_price = centre_df['Sales Price(Kg)'].iloc[-1]
         avg_price = centre_df['Sales Price(Kg)'].mean()
         price_trend = centre_df['Sales Price(Kg)'].pct_change().mean()
+        price_volatility = centre_df['Sales Price(Kg)'].std()
+        
+        # Volume metrics
+        total_volume = centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)']
+        volume_trend = total_volume.pct_change().mean()
+        
+        # Efficiency metrics
+        efficiency_ratio = centre_df['Sold Qty (Ton)'] / total_volume
+        recent_efficiency = efficiency_ratio.tail(3).mean()
         
         market_context = f"""
         Market: {centre}
         Current Price: ₹{current_price:.2f}/Kg
         Average Price: ₹{avg_price:.2f}/Kg
         Price Trend: {price_trend*100:.1f}% average change
+        Price Volatility: ₹{price_volatility:.2f}/Kg
+        Volume Trend: {volume_trend*100:.1f}% average change
+        Market Efficiency: {recent_efficiency*100:.1f}%
         """
         
-        prompt = f"""You are a tea market analyst. Analyze the following tea market data and provide a concise narrative analysis in 2-3 complete sentences. Focus on key price trends and market implications.
+        prompt = f"""You are a tea market analyst. Analyze the following tea market data and provide 3-4 detailed sentences covering:
+1. Current price trends and market position
+2. Volume dynamics and market efficiency
+3. Future market outlook based on current indicators
+4. Key factors influencing market behavior
 
 Market Data:
 {market_context}"""
@@ -264,7 +280,7 @@ Market Data:
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.7,
-            max_tokens=150
+            max_tokens=300
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
@@ -280,19 +296,43 @@ def generate_price_analysis(df: pd.DataFrame, centre: str) -> str:
         client = openai.OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
         centre_df = df[df['Centre'] == centre].sort_values('Sale No').copy()
         
-        # Calculate key price metrics
+        # Calculate comprehensive price metrics
         current_price = centre_df['Sales Price(Kg)'].iloc[-1]
         avg_price = centre_df['Sales Price(Kg)'].mean()
         price_trend = centre_df['Sales Price(Kg)'].pct_change().mean()
+        price_volatility = centre_df['Sales Price(Kg)'].std()
+        price_range = centre_df['Sales Price(Kg)'].max() - centre_df['Sales Price(Kg)'].min()
+        price_percentile = (centre_df['Sales Price(Kg)'] <= current_price).mean() * 100
+        
+        # Calculate seasonal patterns (if enough data)
+        try:
+            # Convert Sale No to datetime for seasonal analysis
+            centre_df['Date'] = pd.to_datetime('2024-01-01') + pd.to_timedelta(centre_df['Sale No'] * 7, unit='D')
+            sales_by_month = centre_df.groupby(pd.Grouper(key='Date', freq='M'))['Sales Price(Kg)'].mean()
+            seasonal_pattern = "Detected" if sales_by_month.std() > price_volatility * 0.5 else "Not significant"
+        except Exception as e:
+            seasonal_pattern = "Analysis not available"
+            logging.error(f"Error in seasonal analysis: {str(e)}")
         
         market_context = f"""
         Market: {centre}
         Current Price: ₹{current_price:.2f}/Kg
         Average Price: ₹{avg_price:.2f}/Kg
         Price Trend: {price_trend*100:.1f}% average change
+        Price Volatility: ₹{price_volatility:.2f}/Kg
+        Price Range: ₹{price_range:.2f}/Kg
+        Current Price Percentile: {price_percentile:.1f}%
+        Seasonal Pattern: {seasonal_pattern}
         """
         
-        prompt = f"""You are a tea market price analyst. Analyze the following price data and provide exactly 3 key insights as complete sentences, focusing on current price position, trends, and short-term outlook. Present insights as plain text without any formatting.
+        prompt = f"""You are a tea market price analyst. Analyze the following price data and provide 4-5 detailed insights focusing on:
+1. Current price position and historical context
+2. Price volatility and market stability
+3. Seasonal patterns and cyclical behavior
+4. Short-term price forecast
+5. Comparative price analysis
+
+Present insights as complete sentences without any formatting.
 
 Market Data:
 {market_context}"""
@@ -301,7 +341,7 @@ Market Data:
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.7,
-            max_tokens=200
+            max_tokens=400
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
@@ -317,17 +357,31 @@ def generate_market_insights(df: pd.DataFrame, centre: str) -> str:
         client = openai.OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
         centre_df = df[df['Centre'] == centre].sort_values('Sale No').copy()
         
-        # Calculate market metrics
+        # Calculate comprehensive market metrics
         market_share = centre_df['Sold Qty (Ton)'].sum() / df['Sold Qty (Ton)'].sum()
         efficiency = centre_df['Sold Qty (Ton)'].sum() / (centre_df['Sold Qty (Ton)'].sum() + centre_df['Unsold Qty (Ton)'].sum())
+        
+        # Additional metrics for competitive analysis
+        avg_lot_size = (centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)']).mean()
+        sales_growth = centre_df['Sold Qty (Ton)'].pct_change().mean()
+        market_stability = 1 - (centre_df['Unsold Qty (Ton)'] / (centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)'])).std()
         
         market_context = f"""
         Market: {centre}
         Market Share: {market_share*100:.1f}%
         Market Efficiency: {efficiency*100:.1f}%
+        Average Lot Size: {avg_lot_size:.1f} tons
+        Sales Growth: {sales_growth*100:.1f}%
+        Market Stability: {market_stability*100:.1f}%
         """
         
-        prompt = f"""You are a tea market analyst. Analyze the following market data and provide 2-3 complete sentences focusing on market position and efficiency. Present insights as plain text without any formatting.
+        prompt = f"""You are a tea market analyst. Analyze the following market data and provide 3-4 detailed insights focusing on:
+1. Market position and competitive strength
+2. Operational efficiency and market absorption
+3. Growth trends and market dynamics
+4. Strategic recommendations
+
+Present insights as complete sentences without any formatting.
 
 Market Data:
 {market_context}"""
@@ -336,7 +390,7 @@ Market Data:
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.7,
-            max_tokens=150
+            max_tokens=300
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
@@ -398,3 +452,13 @@ def generate_pdf_report(df: pd.DataFrame, centre: str) -> bytes:
     doc.build(story)
     buffer.seek(0)
     return buffer.getvalue()
+
+if __name__ == "__main__":
+    # Example usage
+    df = process_excel_data('your_file.xlsx')
+    centre = 'North India CTC Leaf'  # Example market
+    print(generate_price_analysis(df, centre))
+    # Add more analysis calls as needed
+    # print(generate_ai_narrative(df, centre))
+    # print(generate_market_insights(df, centre))
+    # print(generate_pdf_report(df, centre))
