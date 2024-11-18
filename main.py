@@ -107,26 +107,22 @@ try:
             fig.add_trace(
                 go.Table(
                     header=dict(
-                        values=['Sale No', 'Sold Qty', 'Unsold Qty', 'Price'],
-                        font=dict(size=11, color='black'),
+                        values=[['Sale No', *table_data['Sale No'].tolist()]],  # Sale numbers as column headers
+                        font=dict(size=11),
                         align='center',
-                        line=dict(width=1, color='darkgray'),
-                        fill=dict(color='lightgray'),
                         height=30
                     ),
                     cells=dict(
                         values=[
-                            table_data['Sale No'].tolist(),
-                            table_data['Sold Qty (Ton)'].round(0).astype(int).tolist(),
-                            table_data['Unsold Qty (Ton)'].round(0).astype(int).tolist(),
-                            table_data['Sales Price(Kg)'].round(0).astype(int).tolist()
+                            ['Sold Qty'] + table_data['Sold Qty (Ton)'].round(0).astype(int).tolist(),
+                            ['Unsold Qty'] + table_data['Unsold Qty (Ton)'].round(0).astype(int).tolist(),
+                            ['Price'] + table_data['Sales Price(Kg)'].round(0).astype(int).tolist()
                         ],
                         font=dict(size=10),
                         align='center',
-                        format=[None, 'd', 'd', 'd'],
                         height=25
                     ),
-                    columnwidth=[1, 1, 1, 1]
+                    columnwidth=[1] * (len(table_data) + 1)  # Equal width for all columns
                 ),
                 row=2, col=1
             )
@@ -209,26 +205,22 @@ try:
                 fig.add_trace(
                     go.Table(
                         header=dict(
-                            values=['Sale No', 'Sold Qty', 'Unsold Qty', 'Price'],
-                            font=dict(size=11, color='black'),
+                            values=[['Sale No', *table_data['Sale No'].tolist()]],  # Sale numbers as column headers
+                            font=dict(size=11),
                             align='center',
-                            line=dict(width=1, color='darkgray'),
-                            fill=dict(color='lightgray'),
                             height=30
                         ),
                         cells=dict(
                             values=[
-                                table_data['Sale No'].tolist(),
-                                table_data['Sold Qty (Ton)'].round(0).astype(int).tolist(),
-                                table_data['Unsold Qty (Ton)'].round(0).astype(int).tolist(),
-                                table_data['Sales Price(Kg)'].round(0).astype(int).tolist()
+                                ['Sold Qty'] + table_data['Sold Qty (Ton)'].round(0).astype(int).tolist(),
+                                ['Unsold Qty'] + table_data['Unsold Qty (Ton)'].round(0).astype(int).tolist(),
+                                ['Price'] + table_data['Sales Price(Kg)'].round(0).astype(int).tolist()
                             ],
                             font=dict(size=9),
                             align='center',
-                            format=[None, 'd', 'd', 'd'],
                             height=25
                         ),
-                        columnwidth=[1, 1, 1, 1]
+                        columnwidth=[1] * (len(table_data) + 1)  # Equal width for all columns
                     ),
                     row=table_row, col=col
                 )
