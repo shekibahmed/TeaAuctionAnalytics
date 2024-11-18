@@ -379,7 +379,8 @@ try:
                         title="Market Efficiency Trend",
                         xaxis_title="Sale No",
                         yaxis_title="Efficiency Ratio",
-                        height=300
+                        height=300,
+                        yaxis=dict(tickformat='.0%')
                     )
                     st.plotly_chart(volume_trends_fig, use_container_width=True)
                     
@@ -397,70 +398,72 @@ try:
                     other_centre = f"{region} CTC {other_type}"
                     
                     if other_centre in df['Centre'].unique():
-                        # Comparative Price Analysis
                         centre_df = df[df['Centre'] == centre].copy()
                         other_df = df[df['Centre'] == other_centre].copy()
                         
-                        comp_fig = go.Figure()
-                        
-                        # Add price lines
-                        comp_fig.add_trace(go.Scatter(
+                        # Price Comparison Chart
+                        price_fig = go.Figure()
+                        price_fig.add_trace(go.Scatter(
                             x=centre_df['Sale No'],
                             y=centre_df['Sales Price(Kg)'],
                             name=f'{tea_type} Price',
                             line=dict(color='blue')
                         ))
-                        
-                        comp_fig.add_trace(go.Scatter(
+                        price_fig.add_trace(go.Scatter(
                             x=other_df['Sale No'],
                             y=other_df['Sales Price(Kg)'],
                             name=f'{other_type} Price',
-                            line=dict(color='green')
+                            line=dict(color='red')
                         ))
-                        
-                        # Add price ratio
-                        price_ratio = pd.merge(
-                            centre_df[['Sale No', 'Sales Price(Kg)']].rename(columns={'Sales Price(Kg)': 'price1'}),
-                            other_df[['Sale No', 'Sales Price(Kg)']].rename(columns={'Sales Price(Kg)': 'price2'}),
-                            on='Sale No'
-                        )
-                        price_ratio['ratio'] = price_ratio['price1'] / price_ratio['price2']
-                        
-                        comp_fig.add_trace(go.Scatter(
-                            x=price_ratio['Sale No'],
-                            y=price_ratio['ratio'],
-                            name='Price Ratio',
-                            line=dict(color='red', dash='dash'),
-                            yaxis='y2'
-                        ))
-                        
-                        comp_fig.update_layout(
-                            title="Comparative Price Analysis",
+                        price_fig.update_layout(
+                            title=f"Price Comparison: {tea_type} vs {other_type}",
                             xaxis_title="Sale No",
                             yaxis_title="Price (₹/Kg)",
-                            yaxis2=dict(
-                                title="Price Ratio",
-                                overlaying="y",
-                                side="right"
-                            ),
                             height=300
                         )
-                        st.plotly_chart(comp_fig, use_container_width=True)
+                        st.plotly_chart(price_fig, use_container_width=True)
                         
-                        # Market Share Analysis
-                        share_fig = go.Figure()
-                        total_volume = centre_df['Sold Qty (Ton)'] + other_df['Sold Qty (Ton)']
-                        share_fig.add_trace(go.Bar(
+                        # Volume Comparison Chart
+                        vol_fig = go.Figure()
+                        vol_fig.add_trace(go.Bar(
                             x=centre_df['Sale No'],
-                            y=centre_df['Sold Qty (Ton)'] / total_volume * 100,
-                            name=f'{tea_type} Share',
+                            y=centre_df['Sold Qty (Ton)'],
+                            name=f'{tea_type} Volume',
                             marker_color='blue'
                         ))
-                        
-                        share_fig.update_layout(
-                            title="Market Share Analysis",
+                        vol_fig.add_trace(go.Bar(
+                            x=other_df['Sale No'],
+                            y=other_df['Sold Qty (Ton)'],
+                            name=f'{other_type} Volume',
+                            marker_color='red'
+                        ))
+                        vol_fig.update_layout(
+                            title=f"Volume Comparison: {tea_type} vs {other_type}",
                             xaxis_title="Sale No",
-                            yaxis_title="Market Share (%)",
+                            yaxis_title="Volume (Tons)",
+                            height=300,
+                            barmode='group'
+                        )
+                        st.plotly_chart(vol_fig, use_container_width=True)
+                        
+                        # Market Efficiency Comparison
+                        share_fig = go.Figure()
+                        share_fig.add_trace(go.Scatter(
+                            x=centre_df['Sale No'],
+                            y=centre_df['Sold Qty (Ton)'] / (centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)']),
+                            name=f'{tea_type} Efficiency',
+                            line=dict(color='blue')
+                        ))
+                        share_fig.add_trace(go.Scatter(
+                            x=other_df['Sale No'],
+                            y=other_df['Sold Qty (Ton)'] / (other_df['Sold Qty (Ton)'] + other_df['Unsold Qty (Ton)']),
+                            name=f'{other_type} Efficiency',
+                            line=dict(color='red')
+                        ))
+                        share_fig.update_layout(
+                            title=f"Market Efficiency Comparison: {tea_type} vs {other_type}",
+                            xaxis_title="Sale No",
+                            yaxis_title="Efficiency Ratio",
                             height=300
                         )
                         st.plotly_chart(share_fig, use_container_width=True)
