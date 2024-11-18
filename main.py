@@ -296,92 +296,106 @@ try:
             st.subheader(f"{centre} Statistical Analysis")
             
             # Create tabs for different analyses
-            tabs = st.tabs(["Correlation Analysis", "Levels", "Trends", "Comparatives"])
+            tabs = st.tabs(["Trends", "Levels", "Comparatives", "Correlation Analysis"])
             
-            # Correlation Analysis Tab
+            # Trends Analysis Tab (now tabs[0])
             with tabs[0]:
-                st.markdown("### Correlation Analysis")
+                st.markdown("### Market Trends")
+                trends_data = analyze_trends(df, centre)
                 
-                # Calculate correlation matrix
-                corr_matrix = calculate_correlations(df, centre)
+                # Create expandable section for detailed trends analysis
+                with st.expander("Click for Detailed Trends Analysis", expanded=False):
+                    # Trend analysis period selector
+                    st.markdown("#### Select Analysis Period")
+                    trend_period = st.slider(
+                        "Number of Sales for Trend Analysis",
+                        min_value=3,
+                        max_value=15,
+                        value=5,
+                        key=f"trend_period_{centre}"
+                    )
+                    
+                    # Calculate and display trend metrics
+                    centre_df = df[df['Centre'] == centre].sort_values('Sale No').tail(trend_period)
+                    
+                    # Price trend analysis
+                    price_trend_fig = go.Figure()
+                    
+                    # Add actual price line
+                    price_trend_fig.add_trace(go.Scatter(
+                        x=centre_df['Sale No'],
+                        y=centre_df['Sales Price(Kg)'],
+                        name='Actual Price',
+                        line=dict(color='blue')
+                    ))
+                    
+                    # Add trend line
+                    z = np.polyfit(range(len(centre_df)), centre_df['Sales Price(Kg)'], 1)
+                    p = np.poly1d(z)
+                    price_trend_fig.add_trace(go.Scatter(
+                        x=centre_df['Sale No'],
+                        y=p(range(len(centre_df))),
+                        name='Trend Line',
+                        line=dict(color='red', dash='dash')
+                    ))
+                    
+                    price_trend_fig.update_layout(
+                        title="Price Trend Analysis",
+                        xaxis_title="Sale No",
+                        yaxis_title="Price (₹/Kg)",
+                        height=300
+                    )
+                    st.plotly_chart(price_trend_fig, use_container_width=True)
+                    
+                    # Market efficiency trend
+                    efficiency_option = st.selectbox(
+                        "Efficiency Metric",
+                        ["Sold/Total Ratio", "Price/Volume Correlation"],
+                        key=f"efficiency_metric_{centre}"
+                    )
+                    
+                    efficiency_fig = go.Figure()
+                    
+                    if efficiency_option == "Sold/Total Ratio":
+                        efficiency = centre_df['Sold Qty (Ton)'] / (centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)'])
+                        efficiency_fig.add_trace(go.Scatter(
+                            x=centre_df['Sale No'],
+                            y=efficiency,
+                            name='Market Efficiency',
+                            line=dict(color='green')
+                        ))
+                        efficiency_fig.update_layout(
+                            title="Market Efficiency Trend",
+                            xaxis_title="Sale No",
+                            yaxis_title="Efficiency Ratio",
+                            height=300
+                        )
+                    else:
+                        # Calculate rolling correlation
+                        window = min(5, len(centre_df))
+                        correlation = centre_df['Sales Price(Kg)'].rolling(window=window).corr(
+                            centre_df['Sold Qty (Ton)']
+                        )
+                        efficiency_fig.add_trace(go.Scatter(
+                            x=centre_df['Sale No'],
+                            y=correlation,
+                            name='Price-Volume Correlation',
+                            line=dict(color='purple')
+                        ))
+                        efficiency_fig.update_layout(
+                            title="Price-Volume Correlation Trend",
+                            xaxis_title="Sale No",
+                            yaxis_title="Correlation Coefficient",
+                            height=300
+                        )
+                    
+                    st.plotly_chart(efficiency_fig, use_container_width=True)
                 
-                # Create correlation heatmap
-                heatmap_fig = go.Figure(data=go.Heatmap(
-                    z=corr_matrix.values,
-                    x=corr_matrix.columns,
-                    y=corr_matrix.index,
-                    colorscale='RdBu',
-                    zmin=-1, zmax=1,
-                    text=np.round(corr_matrix.values, 2),
-                    texttemplate='%{text}',
-                    textfont={"size": 10},
-                    hoverongaps=False
-                ))
-                
-                heatmap_fig.update_layout(
-                    title="Metric Correlations Heatmap",
-                    height=500,
-                    width=700,
-                    xaxis={'tickangle': 45}
-                )
-                
-                st.plotly_chart(heatmap_fig)
-                
-                # Display key correlation insights
-                st.markdown("#### Key Correlation Insights")
-                correlation_insights = analyze_key_correlations(df, centre)
-                for insight in correlation_insights:
+                # Display textual insights
+                for insight in trends_data:
                     st.markdown(insight)
-                
-                # Interactive Scatter Plot
-                st.markdown("#### Interactive Correlation Scatter Plot")
-                col1, col2 = st.columns(2)
-                
-                with col1:
-                    x_metric = st.selectbox(
-                        "Select X-axis Metric",
-                        options=corr_matrix.columns,
-                        key=f"x_metric_{centre}"
-                    )
-                
-                with col2:
-                    y_metric = st.selectbox(
-                        "Select Y-axis Metric",
-                        options=[col for col in corr_matrix.columns if col != x_metric],
-                        key=f"y_metric_{centre}"
-                    )
-                
-                centre_df = df[df['Centre'] == centre].copy()
-                centre_df['Total Volume'] = centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)']
-                centre_df['Market Efficiency'] = centre_df['Sold Qty (Ton)'] / centre_df['Total Volume']
-                centre_df['Price Change'] = centre_df['Sales Price(Kg)'].pct_change()
-                centre_df['Volume Change'] = centre_df['Total Volume'].pct_change()
-                
-                scatter_fig = go.Figure(data=go.Scatter(
-                    x=centre_df[x_metric],
-                    y=centre_df[y_metric],
-                    mode='markers+text',
-                    text=centre_df['Sale No'],
-                    textposition='top center',
-                    marker=dict(
-                        size=10,
-                        color=centre_df['Sale No'],
-                        colorscale='Viridis',
-                        showscale=True,
-                        colorbar=dict(title="Sale No")
-                    )
-                ))
-                
-                scatter_fig.update_layout(
-                    title=f"Correlation: {x_metric} vs {y_metric}",
-                    xaxis_title=x_metric,
-                    yaxis_title=y_metric,
-                    height=500
-                )
-                
-                st.plotly_chart(scatter_fig, use_container_width=True)
             
-            # Levels Analysis Tab
+            # Levels Analysis Tab (now tabs[1])
             with tabs[1]:
                 st.markdown("### Price and Volume Levels")
                 levels_data = analyze_levels(df, centre)
@@ -486,103 +500,8 @@ try:
                 for insight in levels_data:
                     st.markdown(insight)
             
+            # Comparatives Analysis Tab (now tabs[2])
             with tabs[2]:
-                st.markdown("### Market Trends")
-                trends_data = analyze_trends(df, centre)
-                
-                # Create expandable section for detailed trends analysis
-                with st.expander("Click for Detailed Trends Analysis", expanded=False):
-                    # Trend analysis period selector
-                    st.markdown("#### Select Analysis Period")
-                    trend_period = st.slider(
-                        "Number of Sales for Trend Analysis",
-                        min_value=3,
-                        max_value=15,
-                        value=5,
-                        key=f"trend_period_{centre}"
-                    )
-                    
-                    # Calculate and display trend metrics
-                    centre_df = df[df['Centre'] == centre].sort_values('Sale No').tail(trend_period)
-                    
-                    # Price trend analysis
-                    price_trend_fig = go.Figure()
-                    
-                    # Add actual price line
-                    price_trend_fig.add_trace(go.Scatter(
-                        x=centre_df['Sale No'],
-                        y=centre_df['Sales Price(Kg)'],
-                        name='Actual Price',
-                        line=dict(color='blue')
-                    ))
-                    
-                    # Add trend line
-                    z = np.polyfit(range(len(centre_df)), centre_df['Sales Price(Kg)'], 1)
-                    p = np.poly1d(z)
-                    price_trend_fig.add_trace(go.Scatter(
-                        x=centre_df['Sale No'],
-                        y=p(range(len(centre_df))),
-                        name='Trend Line',
-                        line=dict(color='red', dash='dash')
-                    ))
-                    
-                    price_trend_fig.update_layout(
-                        title="Price Trend Analysis",
-                        xaxis_title="Sale No",
-                        yaxis_title="Price (₹/Kg)",
-                        height=300
-                    )
-                    st.plotly_chart(price_trend_fig, use_container_width=True)
-                    
-                    # Market efficiency trend
-                    efficiency_option = st.selectbox(
-                        "Efficiency Metric",
-                        ["Sold/Total Ratio", "Price/Volume Correlation"],
-                        key=f"efficiency_metric_{centre}"
-                    )
-                    
-                    efficiency_fig = go.Figure()
-                    
-                    if efficiency_option == "Sold/Total Ratio":
-                        efficiency = centre_df['Sold Qty (Ton)'] / (centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)'])
-                        efficiency_fig.add_trace(go.Scatter(
-                            x=centre_df['Sale No'],
-                            y=efficiency,
-                            name='Market Efficiency',
-                            line=dict(color='green')
-                        ))
-                        efficiency_fig.update_layout(
-                            title="Market Efficiency Trend",
-                            xaxis_title="Sale No",
-                            yaxis_title="Efficiency Ratio",
-                            height=300
-                        )
-                    else:
-                        # Calculate rolling correlation
-                        window = min(5, len(centre_df))
-                        correlation = centre_df['Sales Price(Kg)'].rolling(window=window).corr(
-                            centre_df['Sold Qty (Ton)']
-                        )
-                        efficiency_fig.add_trace(go.Scatter(
-                            x=centre_df['Sale No'],
-                            y=correlation,
-                            name='Price-Volume Correlation',
-                            line=dict(color='purple')
-                        ))
-                        efficiency_fig.update_layout(
-                            title="Price-Volume Correlation Trend",
-                            xaxis_title="Sale No",
-                            yaxis_title="Correlation Coefficient",
-                            height=300
-                        )
-                    
-                    st.plotly_chart(efficiency_fig, use_container_width=True)
-                
-                # Display textual insights
-                for insight in trends_data:
-                    st.markdown(insight)
-            
-            with tabs[3]:
                 st.markdown("### Market Comparatives")
                 comparatives_data = analyze_comparatives(df, centre)
                 
@@ -687,6 +606,89 @@ try:
                 # Display textual insights
                 for insight in comparatives_data:
                     st.markdown(insight)
+
+            # Correlation Analysis Tab (now tabs[3])
+            with tabs[3]:
+                st.markdown("### Correlation Analysis")
+                
+                # Calculate correlation matrix
+                corr_matrix = calculate_correlations(df, centre)
+                
+                # Create correlation heatmap
+                heatmap_fig = go.Figure(data=go.Heatmap(
+                    z=corr_matrix.values,
+                    x=corr_matrix.columns,
+                    y=corr_matrix.index,
+                    colorscale='RdBu',
+                    zmin=-1, zmax=1,
+                    text=np.round(corr_matrix.values, 2),
+                    texttemplate='%{text}',
+                    textfont={"size": 10},
+                    hoverongaps=False
+                ))
+                
+                heatmap_fig.update_layout(
+                    title="Metric Correlations Heatmap",
+                    height=500,
+                    width=700,
+                    xaxis={'tickangle': 45}
+                )
+                
+                st.plotly_chart(heatmap_fig)
+                
+                # Display key correlation insights
+                st.markdown("#### Key Correlation Insights")
+                correlation_insights = analyze_key_correlations(df, centre)
+                for insight in correlation_insights:
+                    st.markdown(insight)
+                
+                # Interactive Scatter Plot
+                st.markdown("#### Interactive Correlation Scatter Plot")
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    x_metric = st.selectbox(
+                        "Select X-axis Metric",
+                        options=corr_matrix.columns,
+                        key=f"x_metric_{centre}"
+                    )
+                
+                with col2:
+                    y_metric = st.selectbox(
+                        "Select Y-axis Metric",
+                        options=[col for col in corr_matrix.columns if col != x_metric],
+                        key=f"y_metric_{centre}"
+                    )
+                
+                centre_df = df[df['Centre'] == centre].copy()
+                centre_df['Total Volume'] = centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)']
+                centre_df['Market Efficiency'] = centre_df['Sold Qty (Ton)'] / centre_df['Total Volume']
+                centre_df['Price Change'] = centre_df['Sales Price(Kg)'].pct_change()
+                centre_df['Volume Change'] = centre_df['Total Volume'].pct_change()
+                
+                scatter_fig = go.Figure(data=go.Scatter(
+                    x=centre_df[x_metric],
+                    y=centre_df[y_metric],
+                    mode='markers+text',
+                    text=centre_df['Sale No'],
+                    textposition='top center',
+                    marker=dict(
+                        size=10,
+                        color=centre_df['Sale No'],
+                        colorscale='Viridis',
+                        showscale=True,
+                        colorbar=dict(title="Sale No")
+                    )
+                ))
+                
+                scatter_fig.update_layout(
+                    title=f"Correlation: {x_metric} vs {y_metric}",
+                    xaxis_title=x_metric,
+                    yaxis_title=y_metric,
+                    height=500
+                )
+                
+                st.plotly_chart(scatter_fig, use_container_width=True)
 
         # Add download report button
         if st.button("Download PDF Report", key=f"download_report_{centre}"):
