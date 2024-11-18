@@ -582,63 +582,90 @@ def generate_pdf_report(df: pd.DataFrame, centre: str) -> bytes:
     styles = getSampleStyleSheet()
     story = []
 
-    # Title
+    # Custom styles with built-in fonts
     title_style = ParagraphStyle(
         'CustomTitle',
         parent=styles['Heading1'],
+        fontName='Helvetica-Bold',
         fontSize=24,
         spaceAfter=30
     )
+    
+    heading_style = ParagraphStyle(
+        'CustomHeading',
+        parent=styles['Heading2'],
+        fontName='Helvetica-Bold',
+        fontSize=16,
+        spaceAfter=20
+    )
+    
+    normal_style = ParagraphStyle(
+        'CustomNormal',
+        parent=styles['Normal'],
+        fontName='Helvetica',
+        fontSize=12,
+        spaceAfter=12
+    )
+
+    # Title
     story.append(Paragraph(f"Market Analysis Report - {centre}", title_style))
     story.append(Spacer(1, 20))
 
     # Add Levels Analysis
-    story.append(Paragraph("Price and Volume Levels Analysis", styles['Heading2']))
+    story.append(Paragraph("Price and Volume Levels Analysis", heading_style))
     levels_data = analyze_levels(df, centre)
     for insight in levels_data:
-        story.append(Paragraph(insight, styles['Normal']))
+        # Replace ₹ with Rs. for better compatibility
+        insight = insight.replace('₹', 'Rs.')
+        story.append(Paragraph(insight, normal_style))
     story.append(Spacer(1, 20))
 
     # Add Trends Analysis
-    story.append(Paragraph("Market Trends Analysis", styles['Heading2']))
+    story.append(Paragraph("Market Trends Analysis", heading_style))
     trends_data = analyze_trends(df, centre)
     for insight in trends_data:
-        story.append(Paragraph(insight, styles['Normal']))
+        # Replace ₹ with Rs. for better compatibility
+        insight = insight.replace('₹', 'Rs.')
+        story.append(Paragraph(insight, normal_style))
     story.append(Spacer(1, 20))
 
     # Add Comparatives Analysis
-    story.append(Paragraph("Market Comparatives Analysis", styles['Heading2']))
+    story.append(Paragraph("Market Comparatives Analysis", heading_style))
     comparatives_data = analyze_comparatives(df, centre)
     for insight in comparatives_data:
-        story.append(Paragraph(insight, styles['Normal']))
+        # Replace ₹ with Rs. for better compatibility
+        insight = insight.replace('₹', 'Rs.')
+        story.append(Paragraph(insight, normal_style))
     story.append(Spacer(1, 20))
 
     # Add Statistical Data Table
-    story.append(Paragraph("Statistical Data Summary", styles['Heading2']))
+    story.append(Paragraph("Statistical Data Summary", heading_style))
     centre_df = df[df['Centre'] == centre].sort_values('Sale No').tail(5)  # Last 5 sales
-    table_data = [['Sale No', 'Price (₹/Kg)', 'Sold Qty (Ton)', 'Unsold Qty (Ton)']]
+    table_data = [['Sale No', 'Price (Rs./Kg)', 'Sold Qty (Ton)', 'Unsold Qty (Ton)']]
     for _, row in centre_df.iterrows():
         table_data.append([
             str(int(row['Sale No'])),
-            f"{row['Sales Price(Kg)']:.2f}",
+            f"Rs.{row['Sales Price(Kg)']:.2f}",
             f"{row['Sold Qty (Ton)']:.1f}",
             f"{row['Unsold Qty (Ton)']:.1f}"
         ])
     
-    table = Table(table_data)
-    table.setStyle(TableStyle([
+    table_style = TableStyle([
+        ('FONT', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 14),
+        ('FONT', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 12),
         ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 14),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
         ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
         ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
-        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-        ('FONTSIZE', (0, 1), (-1, -1), 12),
         ('GRID', (0, 0), (-1, -1), 1, colors.black)
-    ]))
+    ])
+    
+    table = Table(table_data)
+    table.setStyle(table_style)
     story.append(table)
 
     # Generate PDF
