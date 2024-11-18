@@ -64,26 +64,5 @@ def apply_custom_styles():
             background-color: #153557;
             border-color: #153557;
         }
-
-        /* Analysis section styling */
-        .analysis-section {
-            background-color: #f0f2f6;
-            padding: 1.5rem;
-            border-radius: 0.5rem;
-            margin-bottom: 1rem;
-        }
-
-        /* Bullet point styling */
-        .analysis-section ul {
-            list-style-type: disc;
-            margin-left: 1.5rem;
-            padding-left: 1rem;
-        }
-
-        .analysis-section li {
-            margin-bottom: 0.5rem;
-            line-height: 1.6;
-            padding-left: 0.5rem;
-        }
         </style>
     """, unsafe_allow_html=True)
