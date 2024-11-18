@@ -134,14 +134,14 @@ def analyze_levels(df: pd.DataFrame, centre: str) -> List[str]:
     latest_sale = centre_df['Sale No'].max()
     latest_data = centre_df[centre_df['Sale No'] == latest_sale].iloc[0]
     
-    # Price level analysis
-    avg_price = centre_df['Sales Price(Kg)'].mean()
+    # Price level analysis with weighted average
+    weighted_avg_price = (centre_df['Sales Price(Kg)'] * centre_df['Sold Qty (Ton)']).sum() / centre_df['Sold Qty (Ton)'].sum()
     latest_price = latest_data['Sales Price(Kg)']
     price_percentile = (centre_df['Sales Price(Kg)'] <= latest_price).mean() * 100
     
     insights.append(f"Price Levels:")
     insights.append(f"  • Current price: ₹{latest_price:.2f}/Kg (Sale {latest_sale})")
-    insights.append(f"  • Historical average: ₹{avg_price:.2f}/Kg")
+    insights.append(f"  • Historical weighted average: ₹{weighted_avg_price:.2f}/Kg")
     insights.append(f"  • Current price is at the {price_percentile:.1f}th percentile of historical prices")
     
     # Volume level analysis
@@ -161,16 +161,17 @@ def analyze_trends(df: pd.DataFrame, centre: str) -> List[str]:
     insights = []
     centre_df = df[df['Centre'] == centre].sort_values('Sale No').copy()
     
-    # Price trends
-    price_changes = centre_df['Sales Price(Kg)'].pct_change()
+    # Calculate weighted average prices for trend analysis
+    centre_df['Weighted_Price'] = (centre_df['Sales Price(Kg)'] * centre_df['Sold Qty (Ton)']) / centre_df['Sold Qty (Ton)']
+    price_changes = centre_df['Weighted_Price'].pct_change()
     recent_price_trend = price_changes.tail(3).mean()
     
     insights.append(f"Price Trends:")
     if abs(recent_price_trend) < 0.01:
-        insights.append("  • Prices have remained stable in recent sales")
+        insights.append("  • Weighted average prices have remained stable in recent sales")
     else:
         trend_direction = "upward" if recent_price_trend > 0 else "downward"
-        insights.append(f"  • Recent {trend_direction} price trend of {abs(recent_price_trend)*100:.1f}%")
+        insights.append(f"  • Recent {trend_direction} weighted price trend of {abs(recent_price_trend)*100:.1f}%")
     
     # Volume trends
     volume_changes = (centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)']).pct_change()
@@ -209,12 +210,14 @@ def analyze_comparatives(df: pd.DataFrame, centre: str) -> List[str]:
         centre_df = df[df['Centre'] == centre].copy()
         other_df = df[df['Centre'] == other_centre].copy()
         
-        # Price comparison
-        price_diff = centre_df['Sales Price(Kg)'].mean() - other_df['Sales Price(Kg)'].mean()
-        price_ratio = centre_df['Sales Price(Kg)'].mean() / other_df['Sales Price(Kg)'].mean()
+        # Weighted Price comparison
+        centre_weighted_price = (centre_df['Sales Price(Kg)'] * centre_df['Sold Qty (Ton)']).sum() / centre_df['Sold Qty (Ton)'].sum()
+        other_weighted_price = (other_df['Sales Price(Kg)'] * other_df['Sold Qty (Ton)']).sum() / other_df['Sold Qty (Ton)'].sum()
+        price_diff = centre_weighted_price - other_weighted_price
+        price_ratio = centre_weighted_price / other_weighted_price if other_weighted_price > 0 else float('inf')
         
         insights.append(f"Regional Comparison ({region}):")
-        insights.append(f"  • Average price is {abs(price_diff):.2f} ₹/Kg {'higher' if price_diff > 0 else 'lower'} than {other_type}")
+        insights.append(f"  • Weighted average price is {abs(price_diff):.2f} ₹/Kg {'higher' if price_diff > 0 else 'lower'} than {other_type}")
         insights.append(f"  • Price ratio ({tea_type}/{other_type}): {price_ratio:.2f}")
         
         # Volume comparison
@@ -245,7 +248,7 @@ def generate_ai_narrative(df: pd.DataFrame, centre: str) -> str:
         
         # Calculate comprehensive metrics
         current_price = centre_df['Sales Price(Kg)'].iloc[-1]
-        avg_price = centre_df['Sales Price(Kg)'].mean()
+        weighted_avg_price = (centre_df['Sales Price(Kg)'] * centre_df['Sold Qty (Ton)']).sum() / centre_df['Sold Qty (Ton)'].sum()
         price_trend = centre_df['Sales Price(Kg)'].pct_change().mean()
         price_volatility = centre_df['Sales Price(Kg)'].std()
         
@@ -260,7 +263,7 @@ def generate_ai_narrative(df: pd.DataFrame, centre: str) -> str:
         market_context = f"""
         Market: {centre}
         Current Price: ₹{current_price:.2f}/Kg
-        Average Price: ₹{avg_price:.2f}/Kg
+        Weighted Average Price: ₹{weighted_avg_price:.2f}/Kg
         Price Trend: {price_trend*100:.1f}% average change
         Price Volatility: ₹{price_volatility:.2f}/Kg
         Volume Trend: {volume_trend*100:.1f}% average change
@@ -298,7 +301,7 @@ def generate_price_analysis(df: pd.DataFrame, centre: str) -> str:
         
         # Calculate comprehensive price metrics
         current_price = centre_df['Sales Price(Kg)'].iloc[-1]
-        avg_price = centre_df['Sales Price(Kg)'].mean()
+        weighted_avg_price = (centre_df['Sales Price(Kg)'] * centre_df['Sold Qty (Ton)']).sum() / centre_df['Sold Qty (Ton)'].sum()
         price_trend = centre_df['Sales Price(Kg)'].pct_change().mean()
         price_volatility = centre_df['Sales Price(Kg)'].std()
         price_range = centre_df['Sales Price(Kg)'].max() - centre_df['Sales Price(Kg)'].min()
@@ -317,7 +320,7 @@ def generate_price_analysis(df: pd.DataFrame, centre: str) -> str:
         market_context = f"""
         Market: {centre}
         Current Price: ₹{current_price:.2f}/Kg
-        Average Price: ₹{avg_price:.2f}/Kg
+        Weighted Average Price: ₹{weighted_avg_price:.2f}/Kg
         Price Trend: {price_trend*100:.1f}% average change
         Price Volatility: ₹{price_volatility:.2f}/Kg
         Price Range: ₹{price_range:.2f}/Kg
