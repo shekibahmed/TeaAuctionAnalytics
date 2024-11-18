@@ -107,22 +107,24 @@ try:
             fig.add_trace(
                 go.Table(
                     header=dict(
-                        values=[['Sale No', *table_data['Sale No'].tolist()]],  # Sale numbers as column headers
+                        values=['Metric'] + [f'Sale {x}' for x in table_data['Sale No'].tolist()],
                         font=dict(size=11),
                         align='center',
                         height=30
                     ),
                     cells=dict(
                         values=[
-                            ['Sold Qty'] + table_data['Sold Qty (Ton)'].round(0).astype(int).tolist(),
-                            ['Unsold Qty'] + table_data['Unsold Qty (Ton)'].round(0).astype(int).tolist(),
-                            ['Price'] + table_data['Sales Price(Kg)'].round(0).astype(int).tolist()
+                            ['Sold Qty', 'Unsold Qty', 'Price'],  # First column shows metric names
+                            *[
+                                [f"{x:,.0f}" for x in table_data['Sold Qty (Ton)'].tolist()],
+                                [f"{x:,.0f}" for x in table_data['Unsold Qty (Ton)'].tolist()],
+                                [f"₹{x:,.0f}" for x in table_data['Sales Price(Kg)'].tolist()]
+                            ]
                         ],
                         font=dict(size=10),
                         align='center',
                         height=25
-                    ),
-                    columnwidth=[1] * (len(table_data) + 1)  # Equal width for all columns
+                    )
                 ),
                 row=2, col=1
             )
@@ -205,22 +207,24 @@ try:
                 fig.add_trace(
                     go.Table(
                         header=dict(
-                            values=[['Sale No', *table_data['Sale No'].tolist()]],  # Sale numbers as column headers
+                            values=['Metric'] + [f'Sale {x}' for x in table_data['Sale No'].tolist()],
                             font=dict(size=11),
                             align='center',
                             height=30
                         ),
                         cells=dict(
                             values=[
-                                ['Sold Qty'] + table_data['Sold Qty (Ton)'].round(0).astype(int).tolist(),
-                                ['Unsold Qty'] + table_data['Unsold Qty (Ton)'].round(0).astype(int).tolist(),
-                                ['Price'] + table_data['Sales Price(Kg)'].round(0).astype(int).tolist()
+                                ['Sold Qty', 'Unsold Qty', 'Price'],  # First column shows metric names
+                                *[
+                                    [f"{x:,.0f}" for x in table_data['Sold Qty (Ton)'].tolist()],
+                                    [f"{x:,.0f}" for x in table_data['Unsold Qty (Ton)'].tolist()],
+                                    [f"₹{x:,.0f}" for x in table_data['Sales Price(Kg)'].tolist()]
+                                ]
                             ],
                             font=dict(size=9),
                             align='center',
                             height=25
-                        ),
-                        columnwidth=[1] * (len(table_data) + 1)  # Equal width for all columns
+                        )
                     ),
                     row=table_row, col=col
                 )
