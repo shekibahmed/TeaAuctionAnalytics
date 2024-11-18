@@ -464,33 +464,6 @@ try:
                             height=300
                         )
                         st.plotly_chart(share_fig, use_container_width=True)
-                        
-                        # Add market share pie chart
-                        market_share_fig = go.Figure()
-                        
-                        # Calculate market shares
-                        centre_vol = centre_df['Sold Qty (Ton)'].sum()
-                        other_vol = other_df['Sold Qty (Ton)'].sum()
-                        total_vol = centre_vol + other_vol
-                        
-                        centre_share = (centre_vol / total_vol * 100) if total_vol > 0 else 0
-                        other_share = (other_vol / total_vol * 100) if total_vol > 0 else 0
-                        
-                        market_share_fig.add_trace(go.Pie(
-                            labels=[f'{tea_type} ({centre_share:.1f}%)', 
-                                   f'{other_type} ({other_share:.1f}%)'],
-                            values=[centre_vol, other_vol],
-                            textinfo='label+percent',
-                            hoverinfo='label+value+percent',
-                            marker=dict(colors=['blue', 'green'])
-                        ))
-                        
-                        market_share_fig.update_layout(
-                            title=f"Market Share Distribution ({region})",
-                            height=300,
-                            showlegend=False
-                        )
-                        st.plotly_chart(market_share_fig, use_container_width=True)
                     
                     # Detailed metrics
                     st.markdown("\n".join(comparatives_data))
@@ -505,6 +478,40 @@ try:
                     file_name=f"{centre}_market_report.pdf",
                     mime="application/pdf"
                 )
+
+            # AI Analysis Section
+            st.markdown("---")  # Add separator
+            st.header("AI-Powered Market Analysis")
+            
+            # Create three columns for different analyses
+            ai_col1, ai_col2, ai_col3 = st.columns(3)
+            
+            with ai_col1:
+                st.markdown("### 🤖 Market Narrative")
+                narrative = generate_ai_narrative(df, centre)
+                st.markdown(f"""
+                <div style='background-color: #f0f2f6; padding: 1rem; border-radius: 0.5rem;'>
+                {narrative}
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with ai_col2:
+                st.markdown("### 📈 Price Analysis")
+                price_analysis = generate_price_analysis(df, centre)
+                st.markdown(f"""
+                <div style='background-color: #f0f2f6; padding: 1rem; border-radius: 0.5rem;'>
+                {price_analysis}
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with ai_col3:
+                st.markdown("### 🔍 Market Insights")
+                market_insights = generate_market_insights(df, centre)
+                st.markdown(f"""
+                <div style='background-color: #f0f2f6; padding: 1rem; border-radius: 0.5rem;'>
+                {market_insights}
+                </div>
+                """, unsafe_allow_html=True)
 
     else:
         # Show placeholders and instructions when no file is uploaded
