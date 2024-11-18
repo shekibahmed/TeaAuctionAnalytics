@@ -69,8 +69,8 @@ try:
                 rows=2, 
                 cols=1,
                 specs=[[{"secondary_y": True}], [{"type": "table"}]],
-                row_heights=[0.85, 0.15],
-                vertical_spacing=0.02
+                row_heights=[0.7, 0.3],  # Adjusted ratio
+                vertical_spacing=0.1  # Increased spacing
             )
             
             centre = selected_centres[0]
@@ -102,22 +102,29 @@ try:
                                   line=dict(color='#3366CC', width=2)),
                        row=1, col=1, secondary_y=True)
 
-            # Add table trace
+            # Add table trace with headers
             table_data = centre_df.sort_values('Sale No', ascending=True).copy()
             fig.add_trace(
                 go.Table(
+                    header=dict(
+                        values=['Sale No', 'Sold Qty', 'Unsold Qty', 'Price'],
+                        font=dict(size=11, color='black'),
+                        align='center',
+                        line=dict(width=1, color='darkgray'),
+                        fill=dict(color='lightgray'),
+                        height=30
+                    ),
                     cells=dict(
                         values=[
-                            ['Sale No'] + table_data['Sale No'].tolist(),
-                            ['Sold Qty'] + table_data['Sold Qty (Ton)'].round(0).astype(int).tolist(),
-                            ['Unsold Qty'] + table_data['Unsold Qty (Ton)'].round(0).astype(int).tolist(),
-                            ['Price'] + table_data['Sales Price(Kg)'].round(0).astype(int).tolist()
+                            table_data['Sale No'].tolist(),
+                            table_data['Sold Qty (Ton)'].round(0).astype(int).tolist(),
+                            table_data['Unsold Qty (Ton)'].round(0).astype(int).tolist(),
+                            table_data['Sales Price(Kg)'].round(0).astype(int).tolist()
                         ],
                         font=dict(size=10),
-                        align=['center'] * 4,
+                        align='center',
                         format=[None, 'd', 'd', 'd'],
-                        height=25,
-                        line=dict(width=0)
+                        height=25
                     ),
                     columnwidth=[1, 1, 1, 1]
                 ),
@@ -131,7 +138,7 @@ try:
                 barmode='group',
                 hovermode='x unified',
                 template='plotly_white',
-                margin=dict(t=30, b=50, l=60, r=60),  # Increased bottom margin
+                margin=dict(t=30, b=100, l=60, r=60),  # Increased bottom margin
                 showlegend=True
             )
 
@@ -150,8 +157,8 @@ try:
                     f"{centre.split(' CTC ')[0]} CTC {centre.split(' CTC ')[1]} Trends"
                     for centre in selected_centres
                 ],
-                vertical_spacing=0.02,
-                row_heights=[0.4, 0.1] * rows  # Adjusted ratio between chart and table
+                vertical_spacing=0.1,  # Increased spacing
+                row_heights=[0.7, 0.3] * rows  # Adjusted ratio between chart and table
             )
 
             for idx, centre in enumerate(selected_centres):
@@ -197,22 +204,29 @@ try:
                     row=chart_row, col=col, secondary_y=True
                 )
 
-                # Add table trace
+                # Add table trace with headers
                 table_data = centre_df.sort_values('Sale No', ascending=True).copy()
                 fig.add_trace(
                     go.Table(
+                        header=dict(
+                            values=['Sale No', 'Sold Qty', 'Unsold Qty', 'Price'],
+                            font=dict(size=11, color='black'),
+                            align='center',
+                            line=dict(width=1, color='darkgray'),
+                            fill=dict(color='lightgray'),
+                            height=30
+                        ),
                         cells=dict(
                             values=[
-                                ['Sale No'] + table_data['Sale No'].tolist(),
-                                ['Sold Qty'] + table_data['Sold Qty (Ton)'].round(0).astype(int).tolist(),
-                                ['Unsold Qty'] + table_data['Unsold Qty (Ton)'].round(0).astype(int).tolist(),
-                                ['Price'] + table_data['Sales Price(Kg)'].round(0).astype(int).tolist()
+                                table_data['Sale No'].tolist(),
+                                table_data['Sold Qty (Ton)'].round(0).astype(int).tolist(),
+                                table_data['Unsold Qty (Ton)'].round(0).astype(int).tolist(),
+                                table_data['Sales Price(Kg)'].round(0).astype(int).tolist()
                             ],
                             font=dict(size=9),
-                            align=['center'] * 4,
+                            align='center',
                             format=[None, 'd', 'd', 'd'],
-                            height=25,
-                            line=dict(width=0)
+                            height=25
                         ),
                         columnwidth=[1, 1, 1, 1]
                     ),
@@ -230,7 +244,7 @@ try:
                 barmode='group',
                 hovermode='x unified',
                 template='plotly_white',
-                margin=dict(t=50, b=50, l=60, r=60),  # Increased bottom margin
+                margin=dict(t=50, b=100, l=60, r=60),  # Increased bottom margin
                 showlegend=True
             )
 
