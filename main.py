@@ -477,6 +477,12 @@ try:
                         centre_df = df[df['Centre'] == centre].copy()
                         other_df = df[df['Centre'] == other_centre].copy()
                         
+                        # Calculate efficiency ratios first
+                        centre_efficiency = (centre_df['Sold Qty (Ton)'] / 
+                                          (centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)']))
+                        other_efficiency = (other_df['Sold Qty (Ton)'] / 
+                                         (other_df['Sold Qty (Ton)'] + other_df['Unsold Qty (Ton)']))
+                        
                         # Price Comparison Chart with enhanced tooltips
                         price_fig = go.Figure()
                         price_fig.add_trace(go.Scatter(
@@ -486,10 +492,8 @@ try:
                             line=dict(color='blue'),
                             hovertemplate="<br>".join([
                                 "Sale No: %{x}",
-                                f"{tea_type} Price: ₹%{y:.2f}/Kg",
-                                "Difference: %{text}"
-                            ]),
-                            text=centre_df['Sales Price(Kg)'].apply(lambda x: f"₹{x:.2f}/Kg")
+                                f"{tea_type} Price: ₹%{y:.2f}/Kg"
+                            ])
                         ))
                         price_fig.add_trace(go.Scatter(
                             x=other_df['Sale No'],
@@ -498,10 +502,8 @@ try:
                             line=dict(color='red'),
                             hovertemplate="<br>".join([
                                 "Sale No: %{x}",
-                                f"{other_type} Price: ₹%{y:.2f}/Kg",
-                                "Difference: %{text}"
-                            ]),
-                            text=other_df['Sales Price(Kg)'].apply(lambda x: f"₹{x:.2f}/Kg")
+                                f"{other_type} Price: ₹%{y:.2f}/Kg"
+                            ])
                         ))
                         price_fig.update_layout(
                             title=f"Price Comparison: {tea_type} vs {other_type}",
@@ -544,11 +546,8 @@ try:
                         )
                         st.plotly_chart(vol_fig, use_container_width=True)
                         
-                        # Market Efficiency Comparison with interactive elements
+                        # Market Efficiency Comparison
                         efficiency_fig = go.Figure()
-                        centre_efficiency = centre_df['Sold Qty (Ton)'] / (centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)'])
-                        other_efficiency = other_df['Sold Qty (Ton)'] / (other_df['Sold Qty (Ton)'] + other_df['Unsold Qty (Ton)'])
-                        
                         efficiency_fig.add_trace(go.Scatter(
                             x=centre_df['Sale No'],
                             y=centre_efficiency,
@@ -556,10 +555,8 @@ try:
                             line=dict(color='blue'),
                             hovertemplate="<br>".join([
                                 "Sale No: %{x}",
-                                "Efficiency: %{y:.1%}",
-                                "Total Volume: %{text} Tons"
-                            ]),
-                            text=centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)']
+                                "Efficiency: %{y:.1%}"
+                            ])
                         ))
                         efficiency_fig.add_trace(go.Scatter(
                             x=other_df['Sale No'],
@@ -568,24 +565,24 @@ try:
                             line=dict(color='red'),
                             hovertemplate="<br>".join([
                                 "Sale No: %{x}",
-                                "Efficiency: %{y:.1%}",
-                                "Total Volume: %{text} Tons"
-                            ]),
-                            text=other_df['Sold Qty (Ton)'] + other_df['Unsold Qty (Ton)']
+                                "Efficiency: %{y:.1%}"
+                            ])
                         ))
                         efficiency_fig.update_layout(
-                            title=f"Market Efficiency Comparison",
+                            title="Market Efficiency Comparison",
                             xaxis_title="Sale No",
                             yaxis_title="Efficiency Ratio",
                             height=300,
-                            hovermode='x unified'
+                            hovermode='x unified',
+                            yaxis=dict(tickformat='.0%')
                         )
                         st.plotly_chart(efficiency_fig, use_container_width=True)
                         
-                        # Add interactive metrics comparison
+                        # Interactive metrics comparison
                         col_m1, col_m2 = st.columns(2)
                         with col_m1:
-                            avg_price_diff = (centre_df['Sales Price(Kg)'].mean() - other_df['Sales Price(Kg)'].mean())
+                            avg_price_diff = (centre_df['Sales Price(Kg)'].mean() - 
+                                           other_df['Sales Price(Kg)'].mean())
                             st.metric(
                                 "Average Price Difference",
                                 f"₹{abs(avg_price_diff):.2f}/Kg",
@@ -599,65 +596,25 @@ try:
                                 f"{'Higher' if avg_eff_diff > 0 else 'Lower'} than {other_type}"
                             )
                         
-                        # Detailed metrics
+                        # Display detailed metrics
                         st.markdown("\n".join(comparatives_data))
-
+                    else:
+                        st.warning(f"No comparative data available for {other_centre}")
+            
             # Add Download PDF Report Button
             st.markdown("### Download Statistical Report")
             if st.button(f"Generate PDF Report for {centre}"):
-                pdf_data = generate_pdf_report(df, centre)
+                report_path = generate_pdf_report(df, centre)
+                with open(report_path, "rb") as pdf_file:
+                    pdf_bytes = pdf_file.read()
                 st.download_button(
-                    label=f"Download {centre} Report",
-                    data=pdf_data,
-                    file_name=f"{centre}_market_report.pdf",
+                    label="Download PDF Report",
+                    data=pdf_bytes,
+                    file_name=f"{centre}_market_analysis.pdf",
                     mime="application/pdf"
                 )
-
-            # AI Analysis Section
-            st.markdown("---")  # Add separator
-            st.header("AI-Powered Market Analysis")
-            
-            # Create three columns for different analyses
-            ai_col1, ai_col2, ai_col3 = st.columns(3)
-            
-            with ai_col1:
-                st.markdown("### 🤖 Market Narrative")
-                narrative = generate_ai_narrative(df, centre)
-                st.markdown(f"""
-                <div style='background-color: #f0f2f6; padding: 1rem; border-radius: 0.5rem;'>
-                {narrative}
-                </div>
-                """, unsafe_allow_html=True)
-            
-            with ai_col2:
-                st.markdown("### 📈 Price Analysis")
-                price_analysis = generate_price_analysis(df, centre)
-                st.markdown(f"""
-                <div style='background-color: #f0f2f6; padding: 1rem; border-radius: 0.5rem;'>
-                {price_analysis}
-                </div>
-                """, unsafe_allow_html=True)
-            
-            with ai_col3:
-                st.markdown("### 🔍 Market Insights")
-                market_insights = generate_market_insights(df, centre)
-                st.markdown(f"""
-                <div style='background-color: #f0f2f6; padding: 1rem; border-radius: 0.5rem;'>
-                {market_insights}
-                </div>
-                """, unsafe_allow_html=True)
-
-    else:
-        # Show placeholders and instructions when no file is uploaded
-        st.info("Upload a file above to start analyzing your tea market data")
-        
-        # Placeholder for charts
-        st.header("Market Trends")
-        st.markdown("Charts will appear here after uploading data")
-        
-        # Placeholder for metrics
-        st.header("Key Metrics by Market")
-        st.markdown("Market metrics will be displayed here after data upload")
-
+                
 except Exception as e:
     st.error(f"An error occurred: {str(e)}")
+    if uploaded_file is None:
+        st.info("Please upload an Excel file to begin analysis.")
