@@ -4,8 +4,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import numpy as np
 from utils import (process_excel_data, generate_price_analysis,
-                   generate_market_insights, generate_volume_analysis,
-                   generate_recommendations, generate_ai_narrative,
+                   generate_market_insights, generate_ai_narrative,
                    analyze_levels, analyze_trends, analyze_comparatives, generate_pdf_report)
 from styles import apply_custom_styles
 import os
