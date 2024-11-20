@@ -245,81 +245,124 @@ def analyze_trends(df: pd.DataFrame, centre: str) -> List[str]:
 
 
 def analyze_comparatives(df: pd.DataFrame, centre: str) -> List[str]:
-    """Analyze cross-market comparisons and benchmarking with optimized data handling"""
+    """Analyze cross-market comparisons and benchmarking with optimized data handling for large datasets"""
     insights = []
-    region, tea_type = centre.split(' CTC ')
-
-    # Compare with other type in same region
-    other_type = 'Dust' if tea_type == 'Leaf' else 'Leaf'
-    other_centre = f"{region} CTC {other_type}"
-
-    # Check if comparison data exists
-    if other_centre in df['Centre'].unique():
-        # Optimize data filtering using boolean indexing
-        centre_mask = df['Centre'] == centre
-        other_mask = df['Centre'] == other_centre
+    
+    # Input validation with detailed error messages
+    if df.empty:
+        return ["No data available for analysis"]
+    
+    try:
+        # Validate and extract centre components
+        if ' CTC ' not in centre:
+            return [f"Invalid centre format: {centre}. Expected format: 'Region CTC Type'"]
         
-        # Calculate weighted prices using vectorized operations
-        centre_weighted_price = np.average(
-            df.loc[centre_mask, 'Sales Price(Kg)'],
-            weights=df.loc[centre_mask, 'Sold Qty (Ton)']
-        )
+        region, tea_type = centre.split(' CTC ')
         
-        other_weighted_price = np.average(
-            df.loc[other_mask, 'Sales Price(Kg)'],
-            weights=df.loc[other_mask, 'Sold Qty (Ton)']
-        )
-
-        price_diff = centre_weighted_price - other_weighted_price
-        price_ratio = (centre_weighted_price / other_weighted_price 
-                      if other_weighted_price > 0 else float('inf'))
-
-        insights.append(f"Regional Comparison ({region}):")
-        insights.append(
-            f"  • Weighted average price is {abs(price_diff):.2f} ₹/Kg {'higher' if price_diff > 0 else 'lower'} than {other_type}"
-        )
-        insights.append(
-            f"  • Price ratio ({tea_type}/{other_type}): {price_ratio:.2f}")
-
-        # Optimized volume calculations
-        centre_vol = df.loc[centre_mask, 'Sold Qty (Ton)'].sum()
-        other_vol = df.loc[other_mask, 'Sold Qty (Ton)'].sum()
-        vol_ratio = centre_vol / other_vol if other_vol > 0 else float('inf')
-
-        insights.append(f"\nVolume Comparison:")
-        insights.append(
-            f"  • Total volume ratio ({tea_type}/{other_type}): {vol_ratio:.2f}"
-        )
-
-        # Optimized efficiency calculations
-        centre_total = df.loc[centre_mask, ['Sold Qty (Ton)', 'Unsold Qty (Ton)']].sum()
-        other_total = df.loc[other_mask, ['Sold Qty (Ton)', 'Unsold Qty (Ton)']].sum()
+        if tea_type not in ['Dust', 'Leaf']:
+            return [f"Invalid tea type: {tea_type}. Must be either 'Dust' or 'Leaf'"]
         
-        centre_eff = centre_total['Sold Qty (Ton)'] / centre_total.sum()
-        other_eff = other_total['Sold Qty (Ton)'] / other_total.sum()
-
-        insights.append(f"\nEfficiency Comparison:")
-        insights.append(
-            f"  • Market efficiency: {centre_eff*100:.1f}% vs {other_eff*100:.1f}% for {other_type}"
-        )
-
-        # Add recent trend comparison for better context
-        recent_sales = 5
-        centre_recent = df[centre_mask].nlargest(recent_sales, 'Sale No')
-        other_recent = df[other_mask].nlargest(recent_sales, 'Sale No')
+        # Optimize data filtering for large datasets
+        df_filtered = df[df['Centre'].str.startswith(region, na=False)].copy()
+        if df_filtered.empty:
+            return [f"No data available for region: {region}"]
         
-        if not centre_recent.empty and not other_recent.empty:
-            centre_trend = centre_recent['Sales Price(Kg)'].pct_change().mean()
-            other_trend = other_recent['Sales Price(Kg)'].pct_change().mean()
+        # Use vectorized operations for centre comparison
+        centre_mask = df_filtered['Centre'] == centre
+        other_type = 'Dust' if tea_type == 'Leaf' else 'Leaf'
+        other_centre = f"{region} CTC {other_type}"
+        other_mask = df_filtered['Centre'] == other_centre
+        
+        if not centre_mask.any() or not other_mask.any():
+            return [f"Insufficient data for comparison between {tea_type} and {other_type} in {region}"]
+        
+        # Efficient data extraction using boolean indexing
+        centre_data = df_filtered[centre_mask]
+        other_data = df_filtered[other_mask]
+        
+        # Calculate metrics using optimized numpy operations
+        def calculate_weighted_price(data: pd.DataFrame) -> float:
+            prices = data['Sales Price(Kg)'].to_numpy()
+            weights = data['Sold Qty (Ton)'].to_numpy()
+            return np.average(prices, weights=weights) if weights.sum() > 0 else 0
+        
+        # Price comparison with error handling
+        centre_price = calculate_weighted_price(centre_data)
+        other_price = calculate_weighted_price(other_data)
+        
+        if centre_price > 0 and other_price > 0:
+            price_diff = centre_price - other_price
+            price_ratio = centre_price / other_price
             
-            insights.append(f"\nRecent Price Trends (Last {recent_sales} sales):")
+            insights.append(f"Price Comparison ({region}):")
             insights.append(
-                f"  • {tea_type}: {centre_trend*100:+.1f}% vs {other_type}: {other_trend*100:+.1f}%"
+                f"  • {tea_type} average price: ₹{centre_price:.2f}/Kg"
             )
-
-    else:
-        insights.append(f"No comparison data available for {other_centre}")
-
+            insights.append(
+                f"  • Difference from {other_type}: {price_diff:+.2f} ₹/Kg"
+            )
+            insights.append(
+                f"  • Price ratio ({tea_type}/{other_type}): {price_ratio:.2f}"
+            )
+        
+        # Volume analysis with optimized calculations
+        centre_vol = centre_data['Sold Qty (Ton)'].sum()
+        other_vol = other_data['Sold Qty (Ton)'].sum()
+        
+        if centre_vol > 0 and other_vol > 0:
+            vol_ratio = centre_vol / other_vol
+            insights.append(f"\nVolume Analysis:")
+            insights.append(
+                f"  • {tea_type} total volume: {centre_vol:,.0f} tons"
+            )
+            insights.append(
+                f"  • Volume ratio ({tea_type}/{other_type}): {vol_ratio:.2f}"
+            )
+        
+        # Market efficiency calculation
+        def calculate_efficiency(data: pd.DataFrame) -> float:
+            sold = data['Sold Qty (Ton)'].sum()
+            total = sold + data['Unsold Qty (Ton)'].sum()
+            return (sold / total) if total > 0 else 0
+        
+        centre_eff = calculate_efficiency(centre_data)
+        other_eff = calculate_efficiency(other_data)
+        
+        if centre_eff > 0 or other_eff > 0:
+            insights.append(f"\nMarket Efficiency:")
+            insights.append(
+                f"  • {tea_type}: {centre_eff*100:.1f}%"
+            )
+            insights.append(
+                f"  • {other_type}: {other_eff*100:.1f}%"
+            )
+        
+        # Recent trends analysis for large datasets
+        def calculate_recent_trend(data: pd.DataFrame, n_sales: int = 5) -> float:
+            if len(data) < 2:
+                return 0
+            recent_data = data.nlargest(n_sales, 'Sale No')
+            if len(recent_data) >= 2:
+                prices = recent_data.sort_values('Sale No')['Sales Price(Kg)']
+                return (prices.iloc[-1] / prices.iloc[0] - 1) * 100
+            return 0
+        
+        centre_trend = calculate_recent_trend(centre_data)
+        other_trend = calculate_recent_trend(other_data)
+        
+        if centre_trend != 0 or other_trend != 0:
+            insights.append(f"\nRecent Price Trends:")
+            insights.append(
+                f"  • {tea_type}: {centre_trend:+.1f}%"
+            )
+            insights.append(
+                f"  • {other_type}: {other_trend:+.1f}%"
+            )
+        
+    except Exception as e:
+        logging.error(f"Error in comparative analysis: {str(e)}")
+        insights = [f"Error in comparative analysis: {str(e)}"]
+    
     return insights
 
 
