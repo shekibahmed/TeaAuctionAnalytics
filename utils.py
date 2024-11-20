@@ -248,76 +248,132 @@ def analyze_comparatives(df: pd.DataFrame, centre: str) -> List[str]:
     """Analyze cross-market comparisons and benchmarking with optimized data handling for large datasets"""
     insights = []
     
-    # Input validation with detailed error messages
+    # Enhanced input validation with detailed error messages
     if df.empty:
+        logging.error("Empty DataFrame provided for analysis")
         return ["No data available for analysis"]
     
     try:
         # Validate and extract centre components
         if ' CTC ' not in centre:
+            logging.error(f"Invalid centre format: {centre}")
             return [f"Invalid centre format: {centre}. Expected format: 'Region CTC Type'"]
         
         region, tea_type = centre.split(' CTC ')
         
         if tea_type not in ['Dust', 'Leaf']:
+            logging.error(f"Invalid tea type: {tea_type}")
             return [f"Invalid tea type: {tea_type}. Must be either 'Dust' or 'Leaf'"]
         
-        # Optimize data filtering for large datasets
-        df_filtered = df[df['Centre'].str.startswith(region, na=False)].copy()
-        if df_filtered.empty:
-            return [f"No data available for region: {region}"]
+        # Precise data filtering maintaining both categories
+        dust_centre = f"{region} CTC Dust"
+        leaf_centre = f"{region} CTC Leaf"
         
-        # Use vectorized operations for centre comparison
-        centre_mask = df_filtered['Centre'] == centre
-        other_type = 'Dust' if tea_type == 'Leaf' else 'Leaf'
-        other_centre = f"{region} CTC {other_type}"
-        other_mask = df_filtered['Centre'] == other_centre
+        # Get data for both categories
+        dust_data = df[df['Centre'] == dust_centre].copy()
+        leaf_data = df[df['Centre'] == leaf_centre].copy()
         
-        if not centre_mask.any() or not other_mask.any():
-            return [f"Insufficient data for comparison between {tea_type} and {other_type} in {region}"]
+        # Validate data availability for both categories
+        if dust_data.empty and leaf_data.empty:
+            logging.error(f"No data available for either category in {region}")
+            return [f"No data available for {region} CTC markets"]
         
-        # Efficient data extraction using boolean indexing
-        centre_data = df_filtered[centre_mask]
-        other_data = df_filtered[other_mask]
+        # Log data points for debugging
+        logging.debug(f"Dust data points: {len(dust_data)}, Leaf data points: {len(leaf_data)}")
         
-        # Calculate metrics using optimized numpy operations
-        def calculate_weighted_price(data: pd.DataFrame) -> float:
-            prices = data['Sales Price(Kg)'].to_numpy()
-            weights = data['Sold Qty (Ton)'].to_numpy()
-            return np.average(prices, weights=weights) if weights.sum() > 0 else 0
+        # Check for data imbalance
+        data_ratio = len(dust_data) / max(len(leaf_data), 1)
+        if 0.1 < data_ratio < 10:  # Allow some imbalance but not extreme
+            logging.debug("Data distribution between categories is acceptable")
+        else:
+            logging.warning(f"Significant data imbalance detected: {data_ratio:.2f} ratio")
         
-        # Price comparison with error handling
-        centre_price = calculate_weighted_price(centre_data)
+        # Select current and other category data
+        current_data = dust_data if tea_type == 'Dust' else leaf_data
+        other_data = leaf_data if tea_type == 'Dust' else dust_data
+        
+        if current_data.empty:
+            logging.error(f"No data available for {tea_type} category")
+            return [f"No data available for {tea_type} category in {region}"]
+        
+        # Calculate metrics using batch processing for large datasets
+        def calculate_weighted_price(data: pd.DataFrame, batch_size: int = 1000) -> float:
+            if len(data) == 0:
+                return 0
+                
+            total_weighted_sum = 0
+            total_weight = 0
+            
+            # Process in batches for large datasets
+            for i in range(0, len(data), batch_size):
+                batch = data.iloc[i:i + batch_size]
+                prices = batch['Sales Price(Kg)'].to_numpy()
+                weights = batch['Sold Qty (Ton)'].to_numpy()
+                
+                # Handle potential NaN values
+                mask = np.isfinite(prices) & np.isfinite(weights)
+                if mask.any():
+                    batch_weights = weights[mask]
+                    batch_weighted_sum = np.sum(prices[mask] * batch_weights)
+                    total_weighted_sum += batch_weighted_sum
+                    total_weight += np.sum(batch_weights)
+            
+            return total_weighted_sum / total_weight if total_weight > 0 else 0
+        
+        # Price comparison with enhanced error handling and validation
+        current_price = calculate_weighted_price(current_data)
         other_price = calculate_weighted_price(other_data)
         
-        if centre_price > 0 and other_price > 0:
-            price_diff = centre_price - other_price
-            price_ratio = centre_price / other_price
+        logging.debug(f"Calculated prices - {tea_type}: ₹{current_price:.2f}/Kg, {other_type}: ₹{other_price:.2f}/Kg")
+        
+        if current_price > 0:
+            insights.append(f"Price Analysis ({region}):")
+            insights.append(
+                f"  • {tea_type} weighted average price: ₹{current_price:.2f}/Kg"
+            )
             
-            insights.append(f"Price Comparison ({region}):")
-            insights.append(
-                f"  • {tea_type} average price: ₹{centre_price:.2f}/Kg"
-            )
-            insights.append(
-                f"  • Difference from {other_type}: {price_diff:+.2f} ₹/Kg"
-            )
-            insights.append(
-                f"  • Price ratio ({tea_type}/{other_type}): {price_ratio:.2f}"
-            )
+            if other_price > 0:
+                price_diff = current_price - other_price
+                price_ratio = current_price / other_price
+                
+                insights.append(
+                    f"  • Difference from {other_type}: {price_diff:+.2f} ₹/Kg"
+                )
+                insights.append(
+                    f"  • Price ratio ({tea_type}/{other_type}): {price_ratio:.2f}"
+                )
+            else:
+                logging.warning(f"No valid price data for {other_type} category")
+                insights.append(f"  • No comparable price data available for {other_type}")
         
-        # Volume analysis with optimized calculations
-        centre_vol = centre_data['Sold Qty (Ton)'].sum()
-        other_vol = other_data['Sold Qty (Ton)'].sum()
+        # Volume analysis with batch processing and validation
+        def calculate_total_volume(data: pd.DataFrame, batch_size: int = 1000) -> float:
+            total_vol = 0
+            for i in range(0, len(data), batch_size):
+                batch = data.iloc[i:i + batch_size]
+                batch_vol = batch['Sold Qty (Ton)'].sum()
+                total_vol += batch_vol
+            return total_vol
         
-        if centre_vol > 0 and other_vol > 0:
-            vol_ratio = centre_vol / other_vol
+        current_vol = calculate_total_volume(current_data)
+        other_vol = calculate_total_volume(other_data)
+        
+        logging.debug(f"Calculated volumes - {tea_type}: {current_vol:.1f} tons, {other_type}: {other_vol:.1f} tons")
+        
+        if current_vol > 0:
             insights.append(f"\nVolume Analysis:")
             insights.append(
-                f"  • {tea_type} total volume: {centre_vol:,.0f} tons"
+                f"  • {tea_type} total volume: {current_vol:,.0f} tons"
             )
-            insights.append(
-                f"  • Volume ratio ({tea_type}/{other_type}): {vol_ratio:.2f}"
-            )
+            
+            if other_vol > 0:
+                vol_ratio = current_vol / other_vol
+                insights.append(
+                    f"  • Volume ratio ({tea_type}/{other_type}): {vol_ratio:.2f}"
+                )
+            else:
+                logging.warning(f"No volume data available for {other_type}")
+                insights.append(f"  • No comparable volume data for {other_type}")
         
         # Market efficiency calculation
         def calculate_efficiency(data: pd.DataFrame) -> float:
