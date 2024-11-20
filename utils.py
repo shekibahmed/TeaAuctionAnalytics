@@ -276,20 +276,16 @@ def analyze_comparatives(df: pd.DataFrame, centre: str) -> List[str]:
         dust_data = df[df['Centre'] == dust_centre].copy()
         leaf_data = df[df['Centre'] == leaf_centre].copy()
         
-        # Validate data availability for both categories
-        if dust_data.empty and leaf_data.empty:
-            logging.error(f"No data available for either category in {region}")
-            return [f"No data available for {region} CTC markets"]
-        
+        # Explicit data validation
+        if dust_data.empty:
+            logging.error(f"No data available for Dust category in {region}")
+            return [f"No data available for Dust category in {region}"]
+        if leaf_data.empty:
+            logging.error(f"No data available for Leaf category in {region}")
+            return [f"No data available for Leaf category in {region}"]
+            
         # Log data points for debugging
-        logging.debug(f"Dust data points: {len(dust_data)}, Leaf data points: {len(leaf_data)}")
-        
-        # Check for data imbalance
-        data_ratio = len(dust_data) / max(len(leaf_data), 1)
-        if 0.1 < data_ratio < 10:  # Allow some imbalance but not extreme
-            logging.debug("Data distribution between categories is acceptable")
-        else:
-            logging.warning(f"Significant data imbalance detected: {data_ratio:.2f} ratio")
+        logging.debug(f"Processing {len(dust_data)} Dust records and {len(leaf_data)} Leaf records")
         
         # Select current and other category data
         current_data = dust_data if tea_type == 'Dust' else leaf_data
@@ -300,8 +296,22 @@ def analyze_comparatives(df: pd.DataFrame, centre: str) -> List[str]:
             return [f"No data available for {tea_type} category in {region}"]
         
         # Calculate metrics using batch processing for large datasets
-        def calculate_weighted_price(data: pd.DataFrame, batch_size: int = 1000) -> float:
+        def calculate_weighted_price(data: pd.DataFrame, batch_size: int = 100) -> float:
             if len(data) == 0:
+                return 0
+            try:
+                total_weighted_sum = 0
+                total_quantity = 0
+                for i in range(0, len(data), batch_size):
+                    batch = data.iloc[i:i + batch_size]
+                    weights = batch['Sold Qty (Ton)']
+                    prices = batch['Sales Price(Kg)']
+                    total_weighted_sum += (weights * prices).sum()
+                    total_quantity += weights.sum()
+                logging.debug(f"Processed {len(data)} records in {len(data)//batch_size + 1} batches")
+                return total_weighted_sum / total_quantity if total_quantity > 0 else 0
+            except Exception as e:
+                logging.error(f"Error in calculate_weighted_price: {str(e)}")
                 return 0
                 
             total_weighted_sum = 0
@@ -328,6 +338,7 @@ def analyze_comparatives(df: pd.DataFrame, centre: str) -> List[str]:
         other_price = calculate_weighted_price(other_data)
         
         logging.debug(f"Calculated prices - {tea_type}: ₹{current_price:.2f}/Kg, {other_type}: ₹{other_price:.2f}/Kg")
+        logging.debug(f"Weighted price calculation - batch size: {batch_size}")
         
         if current_price > 0:
             insights.append(f"Price Analysis ({region}):")
