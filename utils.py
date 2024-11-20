@@ -264,6 +264,9 @@ def analyze_comparatives(df: pd.DataFrame, centre: str) -> List[str]:
         if tea_type not in ['Dust', 'Leaf']:
             logging.error(f"Invalid tea type: {tea_type}")
             return [f"Invalid tea type: {tea_type}. Must be either 'Dust' or 'Leaf'"]
+            
+        # Define other type for comparison
+        other_type = 'Leaf' if tea_type == 'Dust' else 'Dust'
         
         # Precise data filtering maintaining both categories
         dust_centre = f"{region} CTC Dust"
@@ -381,7 +384,7 @@ def analyze_comparatives(df: pd.DataFrame, centre: str) -> List[str]:
             total = sold + data['Unsold Qty (Ton)'].sum()
             return (sold / total) if total > 0 else 0
         
-        centre_eff = calculate_efficiency(centre_data)
+        centre_eff = calculate_efficiency(current_data)
         other_eff = calculate_efficiency(other_data)
         
         if centre_eff > 0 or other_eff > 0:
@@ -403,7 +406,7 @@ def analyze_comparatives(df: pd.DataFrame, centre: str) -> List[str]:
                 return (prices.iloc[-1] / prices.iloc[0] - 1) * 100
             return 0
         
-        centre_trend = calculate_recent_trend(centre_data)
+        centre_trend = calculate_recent_trend(current_data)
         other_trend = calculate_recent_trend(other_data)
         
         if centre_trend != 0 or other_trend != 0:
