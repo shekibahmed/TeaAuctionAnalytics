@@ -72,17 +72,25 @@ def process_excel_data(file):
 
     required_columns = list(column_variations.keys())
 
+    # Add logging for debugging
+    logging.debug(f"Reading file: {file.name}")
+    logging.debug(f"File type: {file.type if hasattr(file, 'type') else 'unknown'}")
+
     # Read the file
     try:
         if file.name.endswith('.csv'):
             df = pd.read_csv(file)
         else:
+            # Try multiple engines in sequence
             try:
-                # Try reading with openpyxl engine first
-                df = pd.read_excel(file, engine='openpyxl')
-            except Exception:
-                # Fallback to xlrd engine for older Excel formats
+                # First try with xlrd for .xls files
                 df = pd.read_excel(file, engine='xlrd')
+            except Exception as e1:
+                try:
+                    # Then try with openpyxl for .xlsx files
+                    df = pd.read_excel(file, engine='openpyxl')
+                except Exception as e2:
+                    raise ValueError(f"Failed to read Excel file with both engines: {str(e1)} and {str(e2)}")
     except Exception as e:
         raise ValueError(f"Error reading file: {str(e)}")
 
