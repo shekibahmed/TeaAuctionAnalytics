@@ -423,3 +423,74 @@ def generate_ai_narrative(df: pd.DataFrame, centre: str) -> str:
     except Exception as e:
         logging.error(f"Error generating AI narrative: {str(e)}")
         return "Error generating market narrative"
+
+def analyze_levels(df: pd.DataFrame, centre: str) -> dict:
+    '''
+    Analyze price and volume levels for a given centre.
+    
+    Args:
+        df (pd.DataFrame): Input dataframe with market data
+        centre (str): Centre name to analyze
+    
+    Returns:
+        dict: Dictionary containing level analysis results
+    '''
+    try:
+        centre_df = df[df['Centre'] == centre].copy()
+        if centre_df.empty:
+            return {
+                'error': f'No data available for centre: {centre}'
+            }
+
+        # Calculate price levels
+        price_stats = {
+            'mean': centre_df['Sales Price(Kg)'].mean(),
+            'median': centre_df['Sales Price(Kg)'].median(),
+            'std': centre_df['Sales Price(Kg)'].std(),
+            'min': centre_df['Sales Price(Kg)'].min(),
+            'max': centre_df['Sales Price(Kg)'].max()
+        }
+
+        # Define price bands
+        price_bands = {
+            'low': price_stats['mean'] - price_stats['std'],
+            'medium': price_stats['mean'],
+            'high': price_stats['mean'] + price_stats['std']
+        }
+
+        # Calculate volume thresholds using percentiles
+        volume_thresholds = {
+            'low': centre_df['Sold Qty (Ton)'].quantile(0.25),
+            'medium': centre_df['Sold Qty (Ton)'].quantile(0.50),
+            'high': centre_df['Sold Qty (Ton)'].quantile(0.75)
+        }
+
+        # Calculate market efficiency
+        total_volume = centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)']
+        market_efficiency = (centre_df['Sold Qty (Ton)'].sum() / total_volume.sum()) * 100
+
+        # Calculate price distribution
+        price_distribution = {
+            'below_mean': (centre_df['Sales Price(Kg)'] < price_stats['mean']).mean() * 100,
+            'above_mean': (centre_df['Sales Price(Kg)'] > price_stats['mean']).mean() * 100
+        }
+
+        # Prepare the final analysis results
+        analysis_results = {
+            'price_statistics': price_stats,
+            'price_bands': price_bands,
+            'volume_thresholds': volume_thresholds,
+            'market_efficiency': market_efficiency,
+            'price_distribution': price_distribution,
+            'data_points': len(centre_df),
+            'analysis_period': {
+                'start': centre_df['Sale No'].min(),
+                'end': centre_df['Sale No'].max()
+            }
+        }
+
+        return analysis_results
+
+    except Exception as e:
+        logging.error(f"Error in level analysis: {str(e)}")
+        return {'error': f'Analysis failed: {str(e)}'}
