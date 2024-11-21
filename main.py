@@ -320,39 +320,45 @@ try:
                     if comparison_metric == "Price":
                         st.markdown("#### Price Comparison")
                         
-                        # Get data for current centre
-                        current_data = df[df['Centre'] == centre].sort_values('Sale No')
+                        # Get current region and type
+                        region = centre.split(' CTC ')[0]
                         
                         # Create price comparison figure
                         fig = go.Figure()
                         
-                        # Plot Dust price line
-                        if "Dust" in centre:
-                            fig.add_trace(go.Scatter(
-                                x=current_data['Sale No'],
-                                y=current_data['Sales Price(Kg)'],
-                                name='Dust Price',
-                                line=dict(color='blue')
-                            ))
+                        # Get all markets for the current region
+                        region_markets = df[df['Centre'].str.startswith(region)]['Centre'].unique()
                         
-                        # Plot Leaf price line if available
-                        leaf_centre = centre.replace('Dust', 'Leaf')
-                        leaf_data = df[df['Centre'] == leaf_centre].sort_values('Sale No')
-                        if not leaf_data.empty:
-                            fig.add_trace(go.Scatter(
-                                x=leaf_data['Sale No'],
-                                y=leaf_data['Sales Price(Kg)'],
-                                name='Leaf Price',
-                                line=dict(color='red')
-                            ))
+                        # Plot price lines for both Dust and Leaf in the same region
+                        for market in region_markets:
+                            market_data = df[df['Centre'] == market].sort_values('Sale No')
+                            if not market_data.empty:
+                                market_type = 'Dust' if 'Dust' in market else 'Leaf'
+                                color = 'blue' if 'Dust' in market else 'red'
+                                
+                                fig.add_trace(go.Scatter(
+                                    x=market_data['Sale No'],
+                                    y=market_data['Sales Price(Kg)'],
+                                    name=f'{market}',
+                                    line=dict(color=color),
+                                    mode='lines+markers'
+                                ))
                         
                         fig.update_layout(
-                            title="Price Comparison",
+                            title=f"Price Comparison - {region} Markets",
                             xaxis_title="Sale No",
                             yaxis_title="Price (₹/Kg)",
                             height=400,
-                            showlegend=True
+                            showlegend=True,
+                            legend=dict(
+                                yanchor="top",
+                                y=0.99,
+                                xanchor="left",
+                                x=0.01
+                            ),
+                            hovermode='x unified'
                         )
+                        
                         st.plotly_chart(fig, use_container_width=True)
                     trend_period = st.slider(
                         "Number of Sales for Trend Analysis",
