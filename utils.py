@@ -272,15 +272,27 @@ def analyze_comparatives(df: pd.DataFrame, centre: str) -> List[str]:
         dust_centre = f"{region} CTC Dust"
         leaf_centre = f"{region} CTC Leaf"
         
-        # Get data for both categories
-        dust_data = df[df['Centre'] == dust_centre].copy()
-        leaf_data = df[df['Centre'] == leaf_centre].copy()
-        
-        # Explicit data validation
-        if dust_data.empty:
-            logging.error(f"No data available for Dust category in {region}")
-            return [f"No data available for Dust category in {region}"]
-        if leaf_data.empty:
+        # Get data for both categories with enhanced filtering
+        try:
+            current_data = df[df['Centre'].str.contains(tea_type, na=False) & 
+                            df['Centre'].str.contains(region, na=False)].copy()
+            other_data = df[df['Centre'].str.contains(other_type, na=False) & 
+                          df['Centre'].str.contains(region, na=False)].copy()
+            
+            logging.debug(f"Processing {len(current_data)} records for {tea_type}")
+            logging.debug(f"Processing {len(other_data)} records for {other_type}")
+            
+            # Explicit data validation
+            if current_data.empty:
+                logging.error(f"No data available for {tea_type} category in {region}")
+                return [f"No data available for {tea_type} category in {region}"]
+            if other_data.empty:
+                logging.error(f"No data available for {other_type} category in {region}")
+                return [f"No data available for {other_type} category in {region}"]
+
+        except Exception as e:
+            logging.error(f"Error in data filtering: {str(e)}")
+            return [f"Error in data filtering: {str(e)}"]
             logging.error(f"No data available for Leaf category in {region}")
             return [f"No data available for Leaf category in {region}"]
             
@@ -296,20 +308,44 @@ def analyze_comparatives(df: pd.DataFrame, centre: str) -> List[str]:
             return [f"No data available for {tea_type} category in {region}"]
         
         # Calculate metrics using batch processing for large datasets
-        def calculate_weighted_price(data: pd.DataFrame, batch_size: int = 100) -> float:
+        def calculate_weighted_price(data: pd.DataFrame) -> float:
+            batch_size = 1000  # Define batch size for processing
             if len(data) == 0:
                 return 0
+                
             try:
                 total_weighted_sum = 0
-                total_quantity = 0
+                total_weight = 0
+                
+                # Process data in batches to handle large datasets efficiently
                 for i in range(0, len(data), batch_size):
                     batch = data.iloc[i:i + batch_size]
-                    weights = batch['Sold Qty (Ton)']
-                    prices = batch['Sales Price(Kg)']
-                    total_weighted_sum += (weights * prices).sum()
-                    total_quantity += weights.sum()
+                    
+                    # Convert to numpy arrays for faster computation
+                    weights = batch['Sold Qty (Ton)'].to_numpy()
+                    prices = batch['Sales Price(Kg)'].to_numpy()
+                    
+                    # Filter out any NaN values
+                    mask = np.isfinite(weights) & np.isfinite(prices)
+                    valid_weights = weights[mask]
+                    valid_prices = prices[mask]
+                    
+                    # Calculate batch totals
+                    batch_weighted_sum = np.sum(valid_weights * valid_prices)
+                    batch_weight = np.sum(valid_weights)
+                    
+                    total_weighted_sum += batch_weighted_sum
+                    total_weight += batch_weight
+                    
                 logging.debug(f"Processed {len(data)} records in {len(data)//batch_size + 1} batches")
-                return total_weighted_sum / total_quantity if total_quantity > 0 else 0
+                logging.debug(f"Total weight processed: {total_weight:.2f} tons")
+                
+                if total_weight > 0:
+                    result = total_weighted_sum / total_weight
+                    logging.debug(f"Calculated weighted price: ₹{result:.2f}/Kg")
+                    return result
+                return 0
+                
             except Exception as e:
                 logging.error(f"Error in calculate_weighted_price: {str(e)}")
                 return 0
