@@ -71,35 +71,35 @@ def process_excel_data(file):
     }
 
     required_columns = list(column_variations.keys())
-
-    # Initialize df variable
     df = None
-    
+    column_mapping = {}
+
     try:
         # Add debug logging
         logging.debug(f"Reading file: {file.name}")
         
+        # Detect file type and use appropriate reader
         if file.name.endswith('.csv'):
             df = pd.read_csv(file)
+            logging.debug("Reading CSV file")
         elif file.name.endswith('.xls'):
-            # Use xlrd for .xls files
+            # For older .xls files
             df = pd.read_excel(file, engine='xlrd')
+            logging.debug("Reading XLS file with xlrd engine")
         elif file.name.endswith('.xlsx'):
-            # Use openpyxl for .xlsx files
+            # For newer .xlsx files
             df = pd.read_excel(file, engine='openpyxl')
+            logging.debug("Reading XLSX file with openpyxl engine")
         else:
-            # Try pandas default Excel reader first
-            try:
-                df = pd.read_excel(file)
-            except Exception as e:
-                raise ValueError(f"Unsupported file format. Error: {str(e)}")
+            raise ValueError(f"Unsupported file format. Please use .xlsx, .xls, or .csv files")
                 
+        if df is None or df.empty:
+            raise ValueError("No data found in the file")
+            
         logging.debug(f"Successfully read file with {len(df)} rows")
     except Exception as e:
+        logging.error(f"Error reading file: {str(e)}")
         raise ValueError(f"Error reading file: {str(e)}")
-
-    # Map columns to standard names
-    column_mapping = {}
     missing_columns = []
     unmapped_columns = []
 
