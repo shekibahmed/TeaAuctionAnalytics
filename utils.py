@@ -266,23 +266,31 @@ def analyze_comparatives(df: pd.DataFrame, centre: str) -> List[str]:
     insights = []
     
     try:
-        # Extract tea type from centre name (Dust or Leaf)
-        tea_type = centre.split(' CTC ')[-1]
+        # Extract region and tea type from centre name
+        region, tea_type = centre.split(' CTC ')
+        tea_type = tea_type.strip()  # Clean any whitespace
         
-        # Filter markets by tea type for fair comparison
+        # Filter markets by region and tea type for fair comparison
         filtered_markets = [
             market for market in df['Centre'].unique()
-            if market.split(' CTC ')[-1] == tea_type
+            if market.split(' CTC ')[0] == region and 
+            market.split(' CTC ')[1].strip() == tea_type
         ]
         
-        # Calculate metrics for current centre using batch processing
-        current_data = df[df['Centre'] == centre].copy()
+        # Add debug logging
+        logging.debug(f"Analyzing market: {centre}")
+        logging.debug(f"Region: {region}, Tea Type: {tea_type}")
+        logging.debug(f"Filtered markets: {filtered_markets}")
         
+        # Calculate metrics for current centre
+        current_data = df[df['Centre'] == centre].copy()
         if current_data.empty:
+            logging.warning(f"No data found for {centre}")
             return [f"No data available for {centre}"]
             
         # Calculate weighted average price for current market
         current_price = calculate_weighted_price(current_data)
+        logging.debug(f"Calculated price for {centre}: {current_price}")
         
         # Calculate recent market efficiency
         total_volume = current_data['Sold Qty (Ton)'] + current_data['Unsold Qty (Ton)']
