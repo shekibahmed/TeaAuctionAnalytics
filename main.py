@@ -142,7 +142,7 @@ try:
                 template='plotly_white',
                 margin=dict(t=30, b=100, l=60, r=60),  # Increased bottom margin
                 showlegend=True,
-                modebar=dict(remove=['drawline', 'drawopenpath', 'drawclosedpath', 'drawcircle', 'drawrect', 'eraseshape'])
+                modebar=dict(remove=[])  # Empty list to keep default modebar tools
             )
 
             fig.update_xaxes(title_text='Sale No', row=1, col=1, showgrid=True)
@@ -250,7 +250,7 @@ try:
                 template='plotly_white',
                 margin=dict(t=50, b=100, l=60, r=60),  # Increased bottom margin
                 showlegend=True,
-                modebar=dict(remove=['drawline', 'drawopenpath', 'drawclosedpath', 'drawcircle', 'drawrect', 'eraseshape'])
+                modebar=dict(remove=[])  # Empty list to keep default modebar tools
             )
 
         # Display charts with integrated tables
@@ -346,7 +346,7 @@ try:
                         xaxis_title="Sale No",
                         yaxis_title="Price (₹/Kg)",
                         height=300,
-                        modebar=dict(remove=['drawline', 'drawopenpath', 'drawclosedpath', 'drawcircle', 'drawrect', 'eraseshape'])
+                        modebar=dict(remove=[])  # Empty list to keep default modebar tools
                     )
                     st.plotly_chart(price_trend_fig, use_container_width=True)
                     

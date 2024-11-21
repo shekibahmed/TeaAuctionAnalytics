@@ -247,249 +247,87 @@ def analyze_trends(df: pd.DataFrame, centre: str) -> List[str]:
 def analyze_comparatives(df: pd.DataFrame, centre: str) -> List[str]:
     """Analyze cross-market comparisons and benchmarking with optimized data handling for large datasets"""
     insights = []
-
-    # Enhanced input validation with detailed error messages
-    if df.empty:
-        logging.error("Empty DataFrame provided for analysis")
-        return ["No data available for analysis"]
-
+    
     try:
-        # Validate and extract centre components
-        if ' CTC ' not in centre:
-            logging.error(f"Invalid centre format: {centre}")
-            return [
-                f"Invalid centre format: {centre}. Expected format: 'Region CTC Type'"
-            ]
-
-        region, tea_type = centre.split(' CTC ')
-
-        if tea_type not in ['Dust', 'Leaf']:
-            logging.error(f"Invalid tea type: {tea_type}")
-            return [
-                f"Invalid tea type: {tea_type}. Must be either 'Dust' or 'Leaf'"
-            ]
-
-        # Define other type for comparison
-        other_type = 'Leaf' if tea_type == 'Dust' else 'Dust'
-
-        # Precise data filtering maintaining both categories
-        dust_centre = f"{region} CTC Dust"
-        leaf_centre = f"{region} CTC Leaf"
-
-        # Get data for both categories with enhanced filtering
-        try:
-            current_data = df[
-                df['Centre'].str.contains(tea_type, na=False)
-                & df['Centre'].str.contains(region, na=False)].copy()
-            other_data = df[
-                df['Centre'].str.contains(other_type, na=False)
-                & df['Centre'].str.contains(region, na=False)].copy()
-
-            logging.debug(
-                f"Processing {len(current_data)} records for {tea_type}")
-            logging.debug(
-                f"Processing {len(other_data)} records for {other_type}")
-
-            # Explicit data validation
-            if current_data.empty:
-                logging.error(
-                    f"No data available for {tea_type} category in {region}")
-                return [
-                    f"No data available for {tea_type} category in {region}"
-                ]
-            if other_data.empty:
-                logging.error(
-                    f"No data available for {other_type} category in {region}")
-                return [
-                    f"No data available for {other_type} category in {region}"
-                ]
-
-        except Exception as e:
-            logging.error(f"Error in data filtering: {str(e)}")
-            return [f"Error in data filtering: {str(e)}"]
-            logging.error(f"No data available for Leaf category in {region}")
-            return [f"No data available for Leaf category in {region}"]
-
-        # Log data points for debugging
-        logging.debug(
-            f"Processing {len(dust_data)} Dust records and {len(leaf_data)} Leaf records"
-        )
-
-        # Select current and other category data
-        current_data = dust_data if tea_type == 'Dust' else leaf_data
-        other_data = leaf_data if tea_type == 'Dust' else dust_data
-
+        # Get all unique markets for comparison
+        all_markets = df['Centre'].unique()
+        
+        # Calculate metrics for current centre
+        current_data = df[df['Centre'] == centre].copy()
+        
         if current_data.empty:
-            logging.error(f"No data available for {tea_type} category")
-            return [f"No data available for {tea_type} category in {region}"]
-
-        # Calculate metrics using batch processing for large datasets
-        def calculate_weighted_price(data: pd.DataFrame) -> float:
-            batch_size = 1000  # Define batch size for processing
-            if len(data) == 0:
-                return 0
-
-            try:
-                total_weighted_sum = 0
-                total_weight = 0
-
-                # Process data in batches to handle large datasets efficiently
-                for i in range(0, len(data), batch_size):
-                    batch = data.iloc[i:i + batch_size]
-
-                    # Convert to numpy arrays for faster computation
-                    weights = batch['Sold Qty (Ton)'].to_numpy()
-                    prices = batch['Sales Price(Kg)'].to_numpy()
-
-                    # Filter out any NaN values
-                    mask = np.isfinite(weights) & np.isfinite(prices)
-                    valid_weights = weights[mask]
-                    valid_prices = prices[mask]
-
-                    # Calculate batch totals
-                    batch_weighted_sum = np.sum(valid_weights * valid_prices)
-                    batch_weight = np.sum(valid_weights)
-
-                    total_weighted_sum += batch_weighted_sum
-                    total_weight += batch_weight
-
-                logging.debug(
-                    f"Processed {len(data)} records in {len(data)//batch_size + 1} batches"
-                )
-                logging.debug(
-                    f"Total weight processed: {total_weight:.2f} tons")
-
-                if total_weight > 0:
-                    result = total_weighted_sum / total_weight
-                    logging.debug(
-                        f"Calculated weighted price: ₹{result:.2f}/Kg")
-                    return result
-                return 0
-
-            except Exception as e:
-                logging.error(f"Error in calculate_weighted_price: {str(e)}")
-                return 0
-
-            total_weighted_sum = 0
-            total_weight = 0
-
-            # Process in batches for large datasets
-            for i in range(0, len(data), batch_size):
-                batch = data.iloc[i:i + batch_size]
-                prices = batch['Sales Price(Kg)'].to_numpy()
-                weights = batch['Sold Qty (Ton)'].to_numpy()
-
-                # Handle potential NaN values
-                mask = np.isfinite(prices) & np.isfinite(weights)
-                if mask.any():
-                    batch_weights = weights[mask]
-                    batch_weighted_sum = np.sum(prices[mask] * batch_weights)
-                    total_weighted_sum += batch_weighted_sum
-                    total_weight += np.sum(batch_weights)
-
-            return total_weighted_sum / total_weight if total_weight > 0 else 0
-
-        # Price comparison with enhanced error handling and validation
+            return [f"No data available for {centre}"]
+            
+        # Calculate weighted average price for current market
         current_price = calculate_weighted_price(current_data)
-        other_price = calculate_weighted_price(other_data)
-
-        logging.debug(
-            f"Calculated prices - {tea_type}: ₹{current_price:.2f}/Kg, {other_type}: ₹{other_price:.2f}/Kg"
-        )
-        logging.debug(f"Weighted price calculation - batch size: {batch_size}")
-
-        if current_price > 0:
-            insights.append(f"Price Analysis ({region}):")
-            insights.append(
-                f"  • {tea_type} weighted average price: ₹{current_price:.2f}/Kg"
-            )
-
-            if other_price > 0:
-                price_diff = current_price - other_price
-                price_ratio = current_price / other_price
-
-                insights.append(
-                    f"  • Difference from {other_type}: {price_diff:+.2f} ₹/Kg"
-                )
-                insights.append(
-                    f"  • Price ratio ({tea_type}/{other_type}): {price_ratio:.2f}"
-                )
-            else:
-                logging.warning(
-                    f"No valid price data for {other_type} category")
-                insights.append(
-                    f"  • No comparable price data available for {other_type}")
-
-        # Volume analysis with batch processing and validation
-        def calculate_total_volume(data: pd.DataFrame,
-                                   batch_size: int = 1000) -> float:
-            total_vol = 0
-            for i in range(0, len(data), batch_size):
-                batch = data.iloc[i:i + batch_size]
-                batch_vol = batch['Sold Qty (Ton)'].sum()
-                total_vol += batch_vol
-            return total_vol
-
-        current_vol = calculate_total_volume(current_data)
-        other_vol = calculate_total_volume(other_data)
-
-        logging.debug(
-            f"Calculated volumes - {tea_type}: {current_vol:.1f} tons, {other_type}: {other_vol:.1f} tons"
-        )
-
-        if current_vol > 0:
-            insights.append(f"\nVolume Analysis:")
-            insights.append(
-                f"  • {tea_type} total volume: {current_vol:,.0f} tons")
-
-            if other_vol > 0:
-                vol_ratio = current_vol / other_vol
-                insights.append(
-                    f"  • Volume ratio ({tea_type}/{other_type}): {vol_ratio:.2f}"
-                )
-            else:
-                logging.warning(f"No volume data available for {other_type}")
-                insights.append(
-                    f"  • No comparable volume data for {other_type}")
-
-        # Market efficiency calculation
-        def calculate_efficiency(data: pd.DataFrame) -> float:
-            sold = data['Sold Qty (Ton)'].sum()
-            total = sold + data['Unsold Qty (Ton)'].sum()
-            return (sold / total) if total > 0 else 0
-
-        centre_eff = calculate_efficiency(current_data)
-        other_eff = calculate_efficiency(other_data)
-
-        if centre_eff > 0 or other_eff > 0:
-            insights.append(f"\nMarket Efficiency:")
-            insights.append(f"  • {tea_type}: {centre_eff*100:.1f}%")
-            insights.append(f"  • {other_type}: {other_eff*100:.1f}%")
-
-        # Recent trends analysis for large datasets
-        def calculate_recent_trend(data: pd.DataFrame,
-                                   n_sales: int = 5) -> float:
-            if len(data) < 2:
-                return 0
-            recent_data = data.nlargest(n_sales, 'Sale No')
-            if len(recent_data) >= 2:
-                prices = recent_data.sort_values('Sale No')['Sales Price(Kg)']
-                return (prices.iloc[-1] / prices.iloc[0] - 1) * 100
-            return 0
-
-        centre_trend = calculate_recent_trend(current_data)
-        other_trend = calculate_recent_trend(other_data)
-
-        if centre_trend != 0 or other_trend != 0:
-            insights.append(f"\nRecent Price Trends:")
-            insights.append(f"  • {tea_type}: {centre_trend:+.1f}%")
-            insights.append(f"  • {other_type}: {other_trend:+.1f}%")
-
+        
+        insights.append(f"Market Comparatives Analysis for {centre}:")
+        insights.append(f"• Current market weighted average price: ₹{current_price:.2f}/Kg")
+        
+        # Compare with other markets
+        for other_market in all_markets:
+            if other_market != centre:
+                other_data = df[df['Centre'] == other_market].copy()
+                if not other_data.empty:
+                    other_price = calculate_weighted_price(other_data)
+                    price_diff = current_price - other_price
+                    price_ratio = current_price / other_price if other_price > 0 else 0
+                    
+                    insights.append(f"\nComparison with {other_market}:")
+                    insights.append(f"• Price difference: {price_diff:+.2f} ₹/Kg")
+                    insights.append(f"• Price ratio: {price_ratio:.2f}")
+        
+        return insights
+        
     except Exception as e:
         logging.error(f"Error in comparative analysis: {str(e)}")
-        insights = [f"Error in comparative analysis: {str(e)}"]
+        return [f"Error in comparative analysis: {str(e)}"]
 
-    return insights
+def calculate_weighted_price(data: pd.DataFrame) -> float:
+    """Calculate weighted average price for a given dataset using batch processing"""
+    batch_size = 1000  # Define batch size for processing
+    if len(data) == 0:
+        return 0
+
+    try:
+        total_weighted_sum = 0
+        total_weight = 0
+
+        # Process data in batches to handle large datasets efficiently
+        for i in range(0, len(data), batch_size):
+            batch = data.iloc[i:i + batch_size]
+
+            # Convert to numpy arrays for faster computation
+            weights = batch['Sold Qty (Ton)'].to_numpy()
+            prices = batch['Sales Price(Kg)'].to_numpy()
+
+            # Filter out any NaN values
+            mask = np.isfinite(weights) & np.isfinite(prices)
+            valid_weights = weights[mask]
+            valid_prices = prices[mask]
+
+            # Calculate batch totals
+            batch_weighted_sum = np.sum(valid_weights * valid_prices)
+            batch_weight = np.sum(valid_weights)
+
+            total_weighted_sum += batch_weighted_sum
+            total_weight += batch_weight
+
+        logging.debug(f"Processed {len(data)} records in {len(data)//batch_size + 1} batches")
+        logging.debug(f"Total weight processed: {total_weight:.2f} tons")
+
+        if total_weight > 0:
+            result = total_weighted_sum / total_weight
+            logging.debug(f"Calculated weighted price: ₹{result:.2f}/Kg")
+            return result
+        return 0
+
+    except Exception as e:
+        logging.error(f"Error in calculate_weighted_price: {str(e)}")
+        return 0
+            
+
+    
 
 
 def generate_ai_narrative(df: pd.DataFrame, centre: str) -> str:
