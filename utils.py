@@ -72,25 +72,29 @@ def process_excel_data(file):
 
     required_columns = list(column_variations.keys())
 
-    # Add logging for debugging
-    logging.debug(f"Reading file: {file.name}")
-    logging.debug(f"File type: {file.type if hasattr(file, 'type') else 'unknown'}")
-
-    # Read the file
+    # Initialize df variable
+    df = None
+    
     try:
+        # Add debug logging
+        logging.debug(f"Reading file: {file.name}")
+        
         if file.name.endswith('.csv'):
             df = pd.read_csv(file)
+        elif file.name.endswith('.xls'):
+            # Use xlrd for .xls files
+            df = pd.read_excel(file, engine='xlrd')
+        elif file.name.endswith('.xlsx'):
+            # Use openpyxl for .xlsx files
+            df = pd.read_excel(file, engine='openpyxl')
         else:
-            # Try multiple engines in sequence
+            # Try pandas default Excel reader first
             try:
-                # First try with xlrd for .xls files
-                df = pd.read_excel(file, engine='xlrd')
-            except Exception as e1:
-                try:
-                    # Then try with openpyxl for .xlsx files
-                    df = pd.read_excel(file, engine='openpyxl')
-                except Exception as e2:
-                    raise ValueError(f"Failed to read Excel file with both engines: {str(e1)} and {str(e2)}")
+                df = pd.read_excel(file)
+            except Exception as e:
+                raise ValueError(f"Unsupported file format. Error: {str(e)}")
+                
+        logging.debug(f"Successfully read file with {len(df)} rows")
     except Exception as e:
         raise ValueError(f"Error reading file: {str(e)}")
 
