@@ -386,3 +386,40 @@ def analyze_comparatives(df: pd.DataFrame, centre: str) -> List[str]:
         insights.append(f"Error during comparative analysis: {str(e)}")
 
     return insights
+
+def generate_ai_narrative(df: pd.DataFrame, centre: str) -> str:
+    '''
+    Generate AI-powered narrative analysis of market data.
+    
+    Args:
+        df (pd.DataFrame): Input dataframe with market data
+        centre (str): Centre name to analyze
+    
+    Returns:
+        str: Generated narrative analysis
+    '''
+    try:
+        centre_df = df[df['Centre'] == centre].sort_values('Sale No').copy()
+        
+        # Calculate key metrics for narrative
+        current_price = centre_df['Sales Price(Kg)'].iloc[-1]
+        avg_price = centre_df['Sales Price(Kg)'].mean()
+        price_trend = "increasing" if centre_df['Sales Price(Kg)'].iloc[-3:].is_monotonic_increasing else \
+                     "decreasing" if centre_df['Sales Price(Kg)'].iloc[-3:].is_monotonic_decreasing else \
+                     "fluctuating"
+        
+        volume_change = ((centre_df['Sold Qty (Ton)'].iloc[-1] / 
+                         centre_df['Sold Qty (Ton)'].iloc[-2] - 1) * 100)
+        
+        narrative = [
+            f"Market Analysis for {centre}:",
+            f"The current market price is ₹{current_price:.2f}/kg, compared to an average of ₹{avg_price:.2f}/kg.",
+            f"Prices have been {price_trend} in recent sales.",
+            f"Trading volume has {'increased' if volume_change > 0 else 'decreased'} by {abs(volume_change):.1f}% in the latest sale."
+        ]
+        
+        return " ".join(narrative)
+        
+    except Exception as e:
+        logging.error(f"Error generating AI narrative: {str(e)}")
+        return "Error generating market narrative"
