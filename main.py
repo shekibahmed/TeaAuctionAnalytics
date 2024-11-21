@@ -310,6 +310,50 @@ try:
                 with st.expander("Click for Detailed Trends Analysis", expanded=False):
                     # Trend analysis period selector
                     st.markdown("#### Select Analysis Period")
+
+            # Price comparison chart in Comparatives tab
+            with tabs[2]:  # Comparatives tab
+                st.markdown("### Market Comparatives")
+                with st.expander("Click for Detailed Comparative Analysis", expanded=False):
+                    comparison_metric = st.selectbox("Select Comparison Metric", ["Price"])
+                    
+                    if comparison_metric == "Price":
+                        st.markdown("#### Price Comparison")
+                        
+                        # Get data for current centre
+                        current_data = df[df['Centre'] == centre].sort_values('Sale No')
+                        
+                        # Create price comparison figure
+                        fig = go.Figure()
+                        
+                        # Plot Dust price line
+                        if "Dust" in centre:
+                            fig.add_trace(go.Scatter(
+                                x=current_data['Sale No'],
+                                y=current_data['Sales Price(Kg)'],
+                                name='Dust Price',
+                                line=dict(color='blue')
+                            ))
+                        
+                        # Plot Leaf price line if available
+                        leaf_centre = centre.replace('Dust', 'Leaf')
+                        leaf_data = df[df['Centre'] == leaf_centre].sort_values('Sale No')
+                        if not leaf_data.empty:
+                            fig.add_trace(go.Scatter(
+                                x=leaf_data['Sale No'],
+                                y=leaf_data['Sales Price(Kg)'],
+                                name='Leaf Price',
+                                line=dict(color='red')
+                            ))
+                        
+                        fig.update_layout(
+                            title="Price Comparison",
+                            xaxis_title="Sale No",
+                            yaxis_title="Price (₹/Kg)",
+                            height=400,
+                            showlegend=True
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
                     trend_period = st.slider(
                         "Number of Sales for Trend Analysis",
                         min_value=3,
