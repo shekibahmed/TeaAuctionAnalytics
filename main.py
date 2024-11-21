@@ -141,7 +141,8 @@ try:
                 hovermode='x unified',
                 template='plotly_white',
                 margin=dict(t=30, b=100, l=60, r=60),  # Increased bottom margin
-                showlegend=True
+                showlegend=True,
+                modebar=dict(remove=['drawline', 'drawopenpath', 'drawclosedpath', 'drawcircle', 'drawrect', 'eraseshape'])
             )
 
             fig.update_xaxes(title_text='Sale No', row=1, col=1, showgrid=True)
@@ -248,7 +249,8 @@ try:
                 hovermode='x unified',
                 template='plotly_white',
                 margin=dict(t=50, b=100, l=60, r=60),  # Increased bottom margin
-                showlegend=True
+                showlegend=True,
+                modebar=dict(remove=['drawline', 'drawopenpath', 'drawclosedpath', 'drawcircle', 'drawrect', 'eraseshape'])
             )
 
         # Display charts with integrated tables
@@ -343,7 +345,8 @@ try:
                         title="Price Trend Analysis",
                         xaxis_title="Sale No",
                         yaxis_title="Price (₹/Kg)",
-                        height=300
+                        height=300,
+                        modebar=dict(remove=['drawline', 'drawopenpath', 'drawclosedpath', 'drawcircle', 'drawrect', 'eraseshape'])
                     )
                     st.plotly_chart(price_trend_fig, use_container_width=True)
                     
@@ -368,7 +371,8 @@ try:
                             title="Market Efficiency Trend",
                             xaxis_title="Sale No",
                             yaxis_title="Efficiency Ratio",
-                            height=300
+                            height=300,
+                            modebar=dict(remove=['drawline', 'drawopenpath', 'drawclosedpath', 'drawcircle', 'drawrect', 'eraseshape'])
                         )
                     else:
                         # Calculate rolling correlation
