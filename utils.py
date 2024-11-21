@@ -254,10 +254,16 @@ def analyze_comparatives(df: pd.DataFrame, centre: str) -> List[str]:
     insights = []
     
     try:
-        # Get all unique markets for comparison
-        all_markets = df['Centre'].unique()
+        # Extract tea type from centre name (Dust or Leaf)
+        tea_type = centre.split(' CTC ')[-1]
         
-        # Calculate metrics for current centre
+        # Filter markets by tea type for fair comparison
+        filtered_markets = [
+            market for market in df['Centre'].unique()
+            if market.split(' CTC ')[-1] == tea_type
+        ]
+        
+        # Calculate metrics for current centre using batch processing
         current_data = df[df['Centre'] == centre].copy()
         
         if current_data.empty:
@@ -266,21 +272,47 @@ def analyze_comparatives(df: pd.DataFrame, centre: str) -> List[str]:
         # Calculate weighted average price for current market
         current_price = calculate_weighted_price(current_data)
         
+        # Calculate recent market efficiency
+        total_volume = current_data['Sold Qty (Ton)'] + current_data['Unsold Qty (Ton)']
+        current_efficiency = (current_data['Sold Qty (Ton)'] / total_volume).mean()
+        
         insights.append(f"Market Comparatives Analysis for {centre}:")
         insights.append(f"• Current market weighted average price: ₹{current_price:.2f}/Kg")
+        insights.append(f"• Market efficiency: {current_efficiency*100:.1f}%")
         
-        # Compare with other markets
-        for other_market in all_markets:
+        # Compare with other markets of same tea type
+        price_differences = []
+        efficiency_differences = []
+        
+        for other_market in filtered_markets:
             if other_market != centre:
                 other_data = df[df['Centre'] == other_market].copy()
                 if not other_data.empty:
+                    # Calculate price metrics
                     other_price = calculate_weighted_price(other_data)
                     price_diff = current_price - other_price
                     price_ratio = current_price / other_price if other_price > 0 else 0
                     
+                    # Calculate efficiency metrics
+                    other_total_volume = other_data['Sold Qty (Ton)'] + other_data['Unsold Qty (Ton)']
+                    other_efficiency = (other_data['Sold Qty (Ton)'] / other_total_volume).mean()
+                    
+                    price_differences.append(price_diff)
+                    efficiency_differences.append(current_efficiency - other_efficiency)
+                    
                     insights.append(f"\nComparison with {other_market}:")
                     insights.append(f"• Price difference: {price_diff:+.2f} ₹/Kg")
                     insights.append(f"• Price ratio: {price_ratio:.2f}")
+                    insights.append(f"• Efficiency difference: {(current_efficiency - other_efficiency)*100:+.1f}%")
+        
+        # Add market position summary
+        if price_differences:
+            avg_price_diff = sum(price_differences) / len(price_differences)
+            avg_efficiency_diff = sum(efficiency_differences) / len(efficiency_differences)
+            
+            insights.append(f"\nMarket Position Summary:")
+            insights.append(f"• Average price difference: {avg_price_diff:+.2f} ₹/Kg vs other {tea_type} markets")
+            insights.append(f"• Average efficiency difference: {avg_efficiency_diff*100:+.1f}% vs other {tea_type} markets")
         
         return insights
         
