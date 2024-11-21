@@ -77,7 +77,12 @@ def process_excel_data(file):
         if file.name.endswith('.csv'):
             df = pd.read_csv(file)
         else:
-            df = pd.read_excel(file)
+            try:
+                # Try reading with openpyxl engine first
+                df = pd.read_excel(file, engine='openpyxl')
+            except Exception:
+                # Fallback to xlrd engine for older Excel formats
+                df = pd.read_excel(file, engine='xlrd')
     except Exception as e:
         raise ValueError(f"Error reading file: {str(e)}")
 
