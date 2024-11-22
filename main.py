@@ -142,8 +142,7 @@ try:
                 hovermode='x unified',
                 template='plotly_white',
                 margin=dict(t=30, b=100, l=60, r=60),  # Increased bottom margin
-                showlegend=True,
-                modebar=dict(remove=[])  # Empty list to keep default modebar tools
+                showlegend=True
             )
 
             fig.update_xaxes(title_text='Sale No', row=1, col=1, showgrid=True)
@@ -250,8 +249,7 @@ try:
                 hovermode='x unified',
                 template='plotly_white',
                 margin=dict(t=50, b=100, l=60, r=60),  # Increased bottom margin
-                showlegend=True,
-                modebar=dict(remove=[])  # Empty list to keep default modebar tools
+                showlegend=True
             )
 
         # Display charts with integrated tables
@@ -318,56 +316,309 @@ try:
                     comparison_metric = st.selectbox("Select Comparison Metric", ["Price"])
                     
                     if comparison_metric == "Price":
-                        st.markdown("#### Price Comparison")
+                        st.markdown("#### Price Comparison - All Markets")
                         
-                        # Create price comparison figure
+                        # Create price comparison figure with enhanced template for better visibility
                         fig = go.Figure()
                         
-                        # Define batch size for processing large datasets
-                        batch_size = 1000
-                        
-                        # Define market types and their colors
-                        market_colors = {
-                            'North India CTC Dust': {'color': '#1f77b4', 'dash': None},      # Solid Blue
-                            'North India CTC Leaf': {'color': '#ff7f0e', 'dash': None},      # Solid Orange
-                            'South India CTC Dust': {'color': '#2ca02c', 'dash': None},      # Solid Green
-                            'South India CTC Leaf': {'color': '#d62728', 'dash': None}       # Solid Red
+                        # Enhanced market styles with improved visibility for Dust grades
+                        market_styles = {
+                            'North India CTC Dust': {
+                                'color': '#1f77b4',  # Bright blue for Dust
+                                'symbol': 'circle',
+                                'size': 16,  # Increased size for better visibility
+                                'width': 5,  # Thicker lines for Dust
+                                'dash': 'solid',
+                                'opacity': 1.0  # Full opacity for Dust
+                            },
+                            'North India CTC Leaf': {
+                                'color': '#ff7f0e',  # Orange for Leaf
+                                'symbol': 'square',
+                                'size': 8,
+                                'width': 2,
+                                'dash': 'dot',
+                                'opacity': 0.7
+                            },
+                            'South India CTC Dust': {
+                                'color': '#2ca02c',  # Bright green for Dust
+                                'symbol': 'diamond',
+                                'size': 16,  # Increased size for better visibility
+                                'width': 5,  # Thicker lines for Dust
+                                'dash': 'solid',
+                                'opacity': 1.0  # Full opacity for Dust
+                            },
+                            'South India CTC Leaf': {
+                                'color': '#d62728',  # Red for Leaf
+                                'symbol': 'cross',
+                                'size': 8,
+                                'width': 2,
+                                'dash': 'dot',
+                                'opacity': 0.7
+                            }
                         }
                         
-                        # Process each market type
-                        for market in market_colors.keys():
-                            # Get market data and sort by Sale No
-                            market_data = df[df['Centre'] == market].sort_values('Sale No')
-                            
+                        # Process and add traces for each market with enhanced visibility
+                        for market, style in market_styles.items():
+                            market_data = df[df['Centre'] == market].copy()
                             if not market_data.empty:
-                                # Process data in batches
-                                for i in range(0, len(market_data), batch_size):
-                                    batch = market_data.iloc[i:i + batch_size]
-                                    
-                                    # Add trace for current batch
-                                    fig.add_trace(go.Scatter(
-                                        x=batch['Sale No'],
-                                        y=batch['Sales Price(Kg)'],
-                                        name=market,
-                                        line=dict(
-                                            color=market_colors[market]['color'],
-                                            width=2,
-                                            dash=market_colors[market]['dash']
-                                        ),
-                                        mode='lines+markers',
-                                        showlegend=(i == 0)  # Show legend only for first batch
-                                    ))
+                                # Optimize data processing for large datasets
+                                market_data = market_data.sort_values('Sale No')
+                                
+                                # Calculate rolling average for smoother visualization
+                                window_size = 3
+                                market_data['Rolling_Price'] = market_data['Sales Price(Kg)'].rolling(
+                                    window=window_size, min_periods=1
+                                ).mean()
+                                
+                                # Add trace with enhanced visibility for Dust grades
+                                is_dust = 'Dust' in market
+                                fig.add_trace(go.Scatter(
+                                    x=market_data['Sale No'],
+                                    y=market_data['Rolling_Price'],
+                                    name=market,
+                                    mode='lines+markers',
+                                    line=dict(
+                                        color=style['color'],
+                                        width=4 if is_dust else 2,
+                                        dash='solid' if is_dust else style['dash']
+                                    ),
+                                    marker=dict(
+                                        symbol=style['symbol'],
+                                        size=12 if is_dust else 8,
+                                        opacity=1.0 if is_dust else 0.7
+                                    )
+                                ))
                         
+                        # Update layout for better visualization
                         fig.update_layout(
-                            title="Price Comparison - All Markets",
+                            height=600,
                             xaxis_title="Sale No",
                             yaxis_title="Price (₹/Kg)",
-                            height=500,  # Increased height for better visibility
+                            hovermode='x unified',
                             showlegend=True,
                             legend=dict(
                                 yanchor="top",
                                 y=0.99,
                                 xanchor="left",
+                                x=0.01,
+                                bgcolor='rgba(255, 255, 255, 0.8)'
+                            ),
+                            plot_bgcolor='white',
+                            paper_bgcolor='white',
+                            xaxis=dict(
+                                showgrid=True,
+                                gridwidth=1,
+                                gridcolor='lightgray',
+                                rangeslider=dict(visible=True)
+                            ),
+                            yaxis=dict(
+                                showgrid=True,
+                                gridwidth=1,
+                                gridcolor='lightgray'
+                            )
+                        )
+                                
+            # Calculate rolling average for smoother visualization
+            window_size = 3
+            market_data['Smooth_Price'] = market_data['Sales Price(Kg)'].rolling(
+                window=window_size, min_periods=1, center=True
+            ).mean()
+                                
+            # Add single trace for better performance
+            is_dust = 'Dust' in market
+            fig.add_trace(go.Scatter(
+                x=batch['Sale No'],
+                y=batch['Sales Price(Kg)'],
+                name=market,
+                mode='lines+markers',
+                line=dict(
+                    color=style['color'],
+                    width=style['width'],
+                    dash=style['dash']
+                ),
+                marker=dict(
+                    symbol=style['symbol'],
+                    size=style['size'],
+                    line=dict(
+                        width=2,
+                                                color=style['color']
+                                            ),
+                                            opacity=0.9 if is_dust else 0.7
+                                        ),
+                                        showlegend=True if i == 0 else False  # Show legend only for first batch
+                                    ))
+                        
+                        # Update layout for better visualization
+                        fig.update_layout(
+                            height=600,
+                            xaxis_title="Sale No",
+                            yaxis_title="Price (₹/Kg)",
+                            hovermode='x unified',
+                            showlegend=True,
+                            legend=dict(
+                                yanchor="top",
+                                y=0.99,
+                                xanchor="left",
+                                x=0.01,
+                                bgcolor='rgba(255, 255, 255, 0.8)'
+                            ),
+                            plot_bgcolor='white',
+                            paper_bgcolor='white',
+                            xaxis=dict(
+                                showgrid=True,
+                                gridwidth=1,
+                                gridcolor='lightgray'
+                            ),
+                            yaxis=dict(
+                                showgrid=True,
+                                gridwidth=1,
+                                gridcolor='lightgray'
+                            )
+                        )
+                        
+                        # Update layout with better visibility for large datasets
+                        fig.update_layout(
+                            height=500,
+                            xaxis_title="Sale No",
+                            yaxis_title="Price (₹/Kg)",
+                            hovermode='x unified',
+                            showlegend=True,
+                            legend=dict(
+                                yanchor="top",
+                                y=0.99,
+                                xanchor="left",
+                                x=0.01
+                            )
+                        )
+                        
+                        # Display the chart
+                        st.plotly_chart(fig, use_container_width=True)
+                                            line=dict(width=2, color=style['color']),
+                                            opacity=0.8
+                                        ),
+                                        showlegend=True  # Always show legend for better visibility
+                                    ))
+                                    
+                        # Update layout with improved visibility for Dust markets
+                        fig.update_layout(
+                            title=dict(
+                                text="Price Comparison - CTC Dust Markets",
+                                x=0.5,
+                                xanchor='center',
+                                font=dict(size=16)
+                            ),
+                            xaxis=dict(
+                                title="Sale No",
+                                showgrid=True,
+                                gridcolor='rgba(0,0,0,0.1)'
+                            ),
+                            yaxis=dict(
+                                title="Price (₹/Kg)",
+                                showgrid=True,
+                                gridcolor='rgba(0,0,0,0.1)'
+                            ),
+                            legend=dict(
+                                yanchor="top",
+                                y=0.99,
+                                xanchor="left",
+                                x=0.01,
+                                bgcolor='rgba(255, 255, 255, 0.8)',
+                                bordercolor='rgba(0, 0, 0, 0.3)',
+                                borderwidth=1
+                            ),
+                            hovermode='x unified',
+                            plot_bgcolor='white',
+                            paper_bgcolor='white',
+                            height=600,
+                            margin=dict(t=50, b=30, l=60, r=30),  # Adjusted margins
+                            showlegend=True
+                        )
+                        
+                        # Display the chart with enhanced visibility
+                        st.plotly_chart(fig, use_container_width=True)
+                                            color=style['color'],
+                                            width=3,  # Thicker lines for better visibility
+                                            dash=style['dash']
+                                        ),
+                                        mode='lines+markers',
+                                        marker=dict(
+                                            size=8,  # Larger markers
+                                            symbol=style['symbol'],
+                                            line=dict(width=2, color=style['color']),
+                                            opacity=0.8
+                                        ),
+                                        showlegend=(i == 0)  # Show legend only for first batch
+                                    ))
+                        
+                        # Update layout with improved visibility for Dust markets
+                        fig.update_layout(
+                            title=dict(
+                                text="Price Comparison - CTC Dust Markets",
+                                x=0.5,
+                                xanchor='center',
+                                font=dict(size=16)
+                            ),
+                            xaxis=dict(
+                                title="Sale No",
+                                showgrid=True,
+                                gridcolor='rgba(0,0,0,0.1)'
+                            ),
+                            yaxis=dict(
+                                title="Price (₹/Kg)",
+                                showgrid=True,
+                                gridcolor='rgba(0,0,0,0.1)'
+                            ),
+                            legend=dict(
+                                yanchor="top",
+                                y=0.99,
+                                xanchor="left",
+                                x=0.01,
+                                bgcolor='rgba(255, 255, 255, 0.8)',
+                                bordercolor='rgba(0, 0, 0, 0.3)',
+                                borderwidth=1
+                            ),
+                            hovermode='x unified',
+                            plot_bgcolor='white',
+                            paper_bgcolor='white',
+                            height=600,
+                            showlegend=True
+                        )
+                        
+                        # Display the chart with enhanced visibility
+                        st.plotly_chart(fig, use_container_width=True)
+                                        showlegend=(i == 0)  # Show legend only for first batch
+                                    ))
+                        
+                        # Update layout with improved visibility for Dust markets
+                        fig.update_layout(
+                            title=dict(
+                                text="Price Comparison - CTC Dust Markets",
+                                font=dict(size=20)
+                            ),
+                            xaxis_title="Sale No",
+                            yaxis_title="Price (₹/Kg)",
+                            height=600,
+                            hovermode='x unified',
+                            showlegend=True,
+                            legend=dict(
+                                yanchor="top",
+                                y=0.99,
+                                xanchor="left",
+                                x=0.01,
+                                bgcolor='rgba(255, 255, 255, 0.8)',
+                                bordercolor='rgba(0, 0, 0, 0.3)',
+                                borderwidth=1
+                            ),
+                            plot_bgcolor='white',
+                            paper_bgcolor='white',
+                            grid=dict(
+                                color='rgba(0, 0, 0, 0.1)',
+                                showgrid=True
+                            )
+                        )
+                        
+                        # Display the chart
+                        st.plotly_chart(fig, use_container_width=True)
                                 x=0.01
                             ),
                             hovermode='x unified'
