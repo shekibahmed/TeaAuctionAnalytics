@@ -320,35 +320,39 @@ try:
                     if comparison_metric == "Price":
                         st.markdown("#### Price Comparison")
                         
-                        # Get current region and type
-                        region = centre.split(' CTC ')[0]
-                        
                         # Create price comparison figure
                         fig = go.Figure()
                         
-                        # Get all markets for the current region
-                        region_markets = df[df['Centre'].str.startswith(region)]['Centre'].unique()
+                        # Get all unique markets
+                        all_markets = df['Centre'].unique()
                         
-                        # Plot price lines for both Dust and Leaf in the same region
-                        for market in region_markets:
+                        # Define colors for different market types
+                        colors = {
+                            'North India CTC Dust': 'blue',
+                            'North India CTC Leaf': 'red',
+                            'South India CTC Dust': 'green',
+                            'South India CTC Leaf': 'orange'
+                        }
+                        
+                        # Plot price lines for all markets
+                        for market in all_markets:
                             market_data = df[df['Centre'] == market].sort_values('Sale No')
                             if not market_data.empty:
-                                market_type = 'Dust' if 'Dust' in market else 'Leaf'
-                                color = 'blue' if 'Dust' in market else 'red'
+                                color = colors.get(market, 'gray')  # Default to gray if market not in colors dict
                                 
                                 fig.add_trace(go.Scatter(
                                     x=market_data['Sale No'],
                                     y=market_data['Sales Price(Kg)'],
-                                    name=f'{market}',
+                                    name=market,
                                     line=dict(color=color),
                                     mode='lines+markers'
                                 ))
                         
                         fig.update_layout(
-                            title=f"Price Comparison - {region} Markets",
+                            title="Price Comparison - All Markets",
                             xaxis_title="Sale No",
                             yaxis_title="Price (₹/Kg)",
-                            height=400,
+                            height=500,  # Increased height for better visibility
                             showlegend=True,
                             legend=dict(
                                 yanchor="top",
