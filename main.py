@@ -323,30 +323,40 @@ try:
                         # Create price comparison figure
                         fig = go.Figure()
                         
-                        # Get all unique markets
-                        all_markets = df['Centre'].unique()
+                        # Define batch size for processing large datasets
+                        batch_size = 1000
                         
-                        # Define colors for different market types
-                        colors = {
-                            'North India CTC Dust': 'blue',
-                            'North India CTC Leaf': 'red',
-                            'South India CTC Dust': 'green',
-                            'South India CTC Leaf': 'orange'
+                        # Define market types and their colors
+                        market_colors = {
+                            'North India CTC Dust': {'color': '#1f77b4', 'dash': None},      # Solid Blue
+                            'North India CTC Leaf': {'color': '#ff7f0e', 'dash': None},      # Solid Orange
+                            'South India CTC Dust': {'color': '#2ca02c', 'dash': None},      # Solid Green
+                            'South India CTC Leaf': {'color': '#d62728', 'dash': None}       # Solid Red
                         }
                         
-                        # Plot price lines for all markets
-                        for market in all_markets:
+                        # Process each market type
+                        for market in market_colors.keys():
+                            # Get market data and sort by Sale No
                             market_data = df[df['Centre'] == market].sort_values('Sale No')
+                            
                             if not market_data.empty:
-                                color = colors.get(market, 'gray')  # Default to gray if market not in colors dict
-                                
-                                fig.add_trace(go.Scatter(
-                                    x=market_data['Sale No'],
-                                    y=market_data['Sales Price(Kg)'],
-                                    name=market,
-                                    line=dict(color=color),
-                                    mode='lines+markers'
-                                ))
+                                # Process data in batches
+                                for i in range(0, len(market_data), batch_size):
+                                    batch = market_data.iloc[i:i + batch_size]
+                                    
+                                    # Add trace for current batch
+                                    fig.add_trace(go.Scatter(
+                                        x=batch['Sale No'],
+                                        y=batch['Sales Price(Kg)'],
+                                        name=market,
+                                        line=dict(
+                                            color=market_colors[market]['color'],
+                                            width=2,
+                                            dash=market_colors[market]['dash']
+                                        ),
+                                        mode='lines+markers',
+                                        showlegend=(i == 0)  # Show legend only for first batch
+                                    ))
                         
                         fig.update_layout(
                             title="Price Comparison - All Markets",
