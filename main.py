@@ -260,29 +260,50 @@ try:
                 'scrollZoom': True,
                 'modeBarButtonsToRemove': ['autoScale2d', 'select2d', 'lasso2d'],
                 'displaylogo': False,
-                'debounce': 200,  # Add debounce for resize events
-                'doubleClick': 'reset+autosize',  # Better handling of double-click events
-                'showAxisDragHandles': True,  # Improved axis interactions
-                'showAxisRangeEntryBoxes': True,  # Better range selection
+                'debounce': 1000,  # Increased debounce time for smoother resizing
+                'doubleClick': 'reset+autosize',
+                'showAxisDragHandles': True,
+                'showAxisRangeEntryBoxes': True,
                 'toImageButtonOptions': {
                     'format': 'png',
                     'filename': 'chart',
                     'height': None,
                     'width': None,
-                    'scale': 2  # Better quality for exported images
-                }
+                    'scale': 2
+                },
+                'responsive': True,
+                'autosize': True,
+                'useResizeHandler': True,  # Enable resize handler
+                'fillFrame': True  # Fill container frame
             }
-            # Use a custom div height to prevent ResizeObserver loop
+            # Enhanced chart container styling with improved resize handling
             st.markdown(
                 """
                 <style>
                     .stPlotlyChart {
                         min-height: 400px !important;
-                        transition: height 0.3s ease-in-out;
+                        height: 100% !important;
+                        transition: height 0.5s ease-in-out;
+                        position: relative;
                     }
-                    /* Prevent unnecessary height changes */
                     .element-container {
                         min-height: 400px !important;
+                        height: auto !important;
+                        position: relative;
+                        overflow: hidden;
+                    }
+                    /* Prevent ResizeObserver loops */
+                    .resize-sensor,
+                    .resize-sensor-expand,
+                    .resize-sensor-shrink {
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        height: 100%;
+                        width: 100%;
+                        overflow: hidden;
+                        pointer-events: none;
+                        z-index: -1;
                     }
                 </style>
                 """,
@@ -334,10 +355,63 @@ try:
             # Create tabs for different analyses
             tabs = st.tabs(["Trends", "Levels", "Comparatives", "Correlation Analysis"])
             
+            # Add custom CSS for chart containers
+            st.markdown("""
+                <style>
+                    .chart-container {
+                        min-height: 400px;
+                        transition: height 0.3s ease-in-out;
+                        position: relative;
+                    }
+                    .loading-spinner {
+                        position: absolute;
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%);
+                    }
+                </style>
+            """, unsafe_allow_html=True)
+            
             # Trends Analysis Tab (now tabs[0])
             with tabs[0]:
-                st.markdown("### Market Trends")
-                trends_data = analyze_trends(df, centre)
+                with st.container():
+                    st.markdown("### Market Trends")
+                    trends_data = analyze_trends(df, centre)
+                    
+            # Comparatives Analysis Tab (tabs[2])
+            with tabs[2]:
+                # Create a container for better height control
+                with st.container():
+                    st.markdown("### Market Comparatives")
+                    # Use empty container for progressive loading
+                    chart_placeholder = st.empty()
+                    
+                    # Show loading state
+                    with st.spinner("Loading comparatives analysis..."):
+                        comparatives_data = analyze_comparatives(df, centre)
+                        
+                        if comparatives_data:
+                            # Create a container for insights with controlled height
+                            with chart_placeholder.container():
+                                # Configure chart display
+                                st.markdown("""
+                                    <style>
+                                        .comparatives-chart {
+                                            min-height: 400px;
+                                            height: auto;
+                                            transition: all 0.3s ease-in-out;
+                                            overflow: hidden;
+                                        }
+                                    </style>
+                                """, unsafe_allow_html=True)
+                                
+                                # Display insights with proper spacing
+                                for insight in comparatives_data:
+                                    st.markdown(f"""
+                                        <div class="comparatives-chart">
+                                            <p>{insight}</p>
+                                        </div>
+                                    """, unsafe_allow_html=True)
                 
                 # Create expandable section for detailed trends analysis
                 with st.expander("Click for Detailed Trends Analysis", expanded=False):
