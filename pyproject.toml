@@ -12,4 +12,5 @@ dependencies = [
     "plotly==5.18.0",
     "reportlab>=4.2.5",
     "streamlit==1.29.0",
+    "xlrd>=2.0.1",
 ]
