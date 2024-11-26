@@ -388,6 +388,137 @@ try:
                     
                     # Show loading state
                     with st.spinner("Loading comparatives analysis..."):
+                        try:
+                            comparatives_data = analyze_comparatives(df, centre)
+                            
+                            if comparatives_data:
+                                # Create subplots for comparative analysis
+                                comp_fig = make_subplots(
+                                    rows=2, cols=2,
+                                    subplot_titles=("Price Comparison", "Volume Comparison",
+                                                  "Efficiency Comparison", "Market Overview"),
+                                    specs=[[{"type": "bar"}, {"type": "bar"}],
+                                         [{"type": "bar"}, {"type": "table"}]],
+                                    vertical_spacing=0.15,
+                                    horizontal_spacing=0.1
+                                )
+                                
+                                # Extract data from comparatives_data
+                                region, tea_type = centre.split(' CTC ')
+                                other_type = 'Dust' if tea_type == 'Leaf' else 'Leaf'
+                                other_centre = f"{region} CTC {other_type}"
+                                
+                                # Price comparison chart
+                                centre_df = df[df['Centre'] == centre].copy()
+                                other_df = df[df['Centre'] == other_centre].copy()
+                                
+                                # Calculate weighted prices
+                                centre_weighted_price = (centre_df['Sales Price(Kg)'] * centre_df['Sold Qty (Ton)']).sum() / centre_df['Sold Qty (Ton)'].sum()
+                                other_weighted_price = (other_df['Sales Price(Kg)'] * other_df['Sold Qty (Ton)']).sum() / other_df['Sold Qty (Ton)'].sum()
+                                
+                                # Add price comparison bar chart
+                                comp_fig.add_trace(
+                                    go.Bar(
+                                        x=[tea_type, other_type],
+                                        y=[centre_weighted_price, other_weighted_price],
+                                        marker_color=['#FF9966', '#808080'],
+                                        name='Weighted Price'
+                                    ),
+                                    row=1, col=1
+                                )
+                                
+                                # Volume comparison
+                                centre_vol = centre_df['Sold Qty (Ton)'].sum()
+                                other_vol = other_df['Sold Qty (Ton)'].sum()
+                                
+                                comp_fig.add_trace(
+                                    go.Bar(
+                                        x=[tea_type, other_type],
+                                        y=[centre_vol, other_vol],
+                                        marker_color=['#FF9966', '#808080'],
+                                        name='Total Volume'
+                                    ),
+                                    row=1, col=2
+                                )
+                                
+                                # Efficiency comparison
+                                centre_eff = centre_df['Sold Qty (Ton)'].sum() / (centre_df['Sold Qty (Ton)'].sum() + centre_df['Unsold Qty (Ton)'].sum()) * 100
+                                other_eff = other_df['Sold Qty (Ton)'].sum() / (other_df['Sold Qty (Ton)'].sum() + other_df['Unsold Qty (Ton)'].sum()) * 100
+                                
+                                comp_fig.add_trace(
+                                    go.Bar(
+                                        x=[tea_type, other_type],
+                                        y=[centre_eff, other_eff],
+                                        marker_color=['#FF9966', '#808080'],
+                                        name='Market Efficiency (%)'
+                                    ),
+                                    row=2, col=1
+                                )
+                                
+                                # Add summary table
+                                comp_fig.add_trace(
+                                    go.Table(
+                                        header=dict(
+                                            values=['Metric', tea_type, other_type],
+                                            font=dict(size=12),
+                                            align='center'
+                                        ),
+                                        cells=dict(
+                                            values=[
+                                                ['Weighted Price (₹/Kg)', 'Total Volume (Tons)', 'Market Efficiency (%)'],
+                                                [f'{centre_weighted_price:.2f}', f'{centre_vol:.0f}', f'{centre_eff:.1f}'],
+                                                [f'{other_weighted_price:.2f}', f'{other_vol:.0f}', f'{other_eff:.1f}']
+                                            ],
+                                            font=dict(size=11),
+                                            align='center'
+                                        )
+                                    ),
+                                    row=2, col=2
+                                )
+                                
+                                # Update layout with proper spacing and styling
+                                comp_fig.update_layout(
+                                    height=800,
+                                    showlegend=False,
+                                    title_text=f"Comparative Analysis: {region} CTC Markets",
+                                    template='plotly_white',
+                                    margin=dict(t=50, b=50, l=50, r=50)
+                                )
+                                
+                                # Update axes labels and styling
+                                comp_fig.update_xaxes(showgrid=True)
+                                comp_fig.update_yaxes(showgrid=True)
+                                
+                                # Update individual subplot titles and axes
+                                comp_fig.update_yaxes(title_text="Price (₹/Kg)", row=1, col=1)
+                                comp_fig.update_yaxes(title_text="Volume (Tons)", row=1, col=2)
+                                comp_fig.update_yaxes(title_text="Efficiency (%)", row=2, col=1)
+                                
+                                # Display the chart with proper config
+                                config = {
+                                    'responsive': True,
+                                    'displayModeBar': True,
+                                    'scrollZoom': True,
+                                    'modeBarButtonsToRemove': ['autoScale2d', 'select2d', 'lasso2d'],
+                                    'displaylogo': False,
+                                    'debounce': 1000,
+                                    'doubleClick': 'reset+autosize',
+                                    'showAxisDragHandles': True,
+                                    'showAxisRangeEntryBoxes': True,
+                                    'useResizeHandler': True,
+                                    'fillFrame': True
+                                }
+                                
+                                with chart_placeholder.container():
+                                    st.plotly_chart(comp_fig, use_container_width=True, config=config)
+                            
+                            else:
+                                st.warning("No comparative data available for the selected market.")
+                        
+                        except Exception as e:
+                            st.error(f"Error generating comparative analysis: {str(e)}")
+                            logging.error(f"Comparative analysis error: {str(e)}")
+                    with st.spinner("Loading comparatives analysis..."):
                         comparatives_data = analyze_comparatives(df, centre)
                         
                         if comparatives_data:
