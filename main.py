@@ -251,8 +251,44 @@ try:
                 showlegend=True
             )
 
-        # Display charts with integrated tables
-        st.plotly_chart(fig, use_container_width=True)
+        # Display charts with integrated tables and optimized resize handling
+        chart_container = st.empty()
+        with chart_container:
+            config = {
+                'responsive': True,
+                'displayModeBar': True,
+                'scrollZoom': True,
+                'modeBarButtonsToRemove': ['autoScale2d', 'select2d', 'lasso2d'],
+                'displaylogo': False,
+                'debounce': 200,  # Add debounce for resize events
+                'doubleClick': 'reset+autosize',  # Better handling of double-click events
+                'showAxisDragHandles': True,  # Improved axis interactions
+                'showAxisRangeEntryBoxes': True,  # Better range selection
+                'toImageButtonOptions': {
+                    'format': 'png',
+                    'filename': 'chart',
+                    'height': None,
+                    'width': None,
+                    'scale': 2  # Better quality for exported images
+                }
+            }
+            # Use a custom div height to prevent ResizeObserver loop
+            st.markdown(
+                """
+                <style>
+                    .stPlotlyChart {
+                        min-height: 400px !important;
+                        transition: height 0.3s ease-in-out;
+                    }
+                    /* Prevent unnecessary height changes */
+                    .element-container {
+                        min-height: 400px !important;
+                    }
+                </style>
+                """,
+                unsafe_allow_html=True
+            )
+            st.plotly_chart(fig, use_container_width=True, config=config)
 
         # AI-Powered Market Analysis Section (Now above Statistical Analysis)
         st.markdown("---")  # Add separator
