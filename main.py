@@ -181,49 +181,59 @@ try:
 
         # AI-Powered Market Analysis section
         st.markdown("---")  # Add a visual separator
-        st.header("AI-Powered Market Analysis")
+        st.markdown("""
+            <h2 style='text-align: center; color: #1F4E79; margin-bottom: 2rem;'>AI-Powered Market Analysis</h2>
+            
+            <div style='display: flex; justify-content: space-between; gap: 2rem; margin-bottom: 2rem;'>
+                <!-- Market Narrative -->
+                <div style='flex: 1;'>
+                    <h3 style='color: #1F4E79; margin-bottom: 1rem;'>Market Narrative 📊</h3>
+                    <div style='background-color: #f8f9fa; padding: 1.5rem; border-radius: 0.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); height: 100%;'>
+        """, unsafe_allow_html=True)
         
-        # Create three columns with equal width
-        ai_cols = st.columns([1, 1, 1])
+        if len(selected_centres) == 1:
+            narrative = generate_ai_narrative(df_selected, selected_centres[0])
+            st.markdown(narrative)
+        else:
+            st.info("Please select a single market for detailed AI analysis")
+            
+        st.markdown("""
+                    </div>
+                </div>
+                
+                <!-- Price Analysis -->
+                <div style='flex: 1;'>
+                    <h3 style='color: #1F4E79; margin-bottom: 1rem;'>Price Analysis 💰</h3>
+                    <div style='background-color: #f8f9fa; padding: 1.5rem; border-radius: 0.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); height: 100%;'>
+        """, unsafe_allow_html=True)
         
-        # Market Narrative
-        with ai_cols[0]:
-            st.subheader("Market Narrative")
-            if len(selected_centres) == 1:
-                narrative = generate_ai_narrative(df_selected, selected_centres[0])
-                st.markdown("""
-                <div style='background-color: #f8f9fa; padding: 1rem; border-radius: 0.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
-                """, unsafe_allow_html=True)
-                st.write(narrative)
-                st.markdown("</div>", unsafe_allow_html=True)
-            else:
-                st.info("Please select a single market for detailed AI analysis")
+        if len(selected_centres) == 1:
+            price_insights = generate_price_analysis(df_selected, selected_centres[0])
+            st.markdown(price_insights)
+        else:
+            st.info("Please select a single market for price analysis")
+            
+        st.markdown("""
+                    </div>
+                </div>
+                
+                <!-- Market Insights -->
+                <div style='flex: 1;'>
+                    <h3 style='color: #1F4E79; margin-bottom: 1rem;'>Market Insights 📈</h3>
+                    <div style='background-color: #f8f9fa; padding: 1.5rem; border-radius: 0.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); height: 100%;'>
+        """, unsafe_allow_html=True)
         
-        # Price Analysis
-        with ai_cols[1]:
-            st.subheader("Price Analysis")
-            if len(selected_centres) == 1:
-                price_insights = generate_price_analysis(df_selected, selected_centres[0])
-                st.markdown("""
-                <div style='background-color: #f8f9fa; padding: 1rem; border-radius: 0.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
-                """, unsafe_allow_html=True)
-                st.write(price_insights)
-                st.markdown("</div>", unsafe_allow_html=True)
-            else:
-                st.info("Please select a single market for price analysis")
-
-        # Market Insights
-        with ai_cols[2]:
-            st.subheader("Market Insights")
-            if len(selected_centres) == 1:
-                market_insights = generate_market_insights(df_selected, selected_centres[0])
-                st.markdown("""
-                <div style='background-color: #f8f9fa; padding: 1rem; border-radius: 0.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
-                """, unsafe_allow_html=True)
-                st.write(market_insights)
-                st.markdown("</div>", unsafe_allow_html=True)
-            else:
-                st.info("Please select a single market for market insights")
+        if len(selected_centres) == 1:
+            market_insights = generate_market_insights(df_selected, selected_centres[0])
+            st.markdown(market_insights)
+        else:
+            st.info("Please select a single market for market insights")
+            
+        st.markdown("""
+                    </div>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
 
         # Statistical Analysis section
         st.markdown("---")  # Add a visual separator
