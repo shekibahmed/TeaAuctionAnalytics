@@ -5,8 +5,19 @@ def apply_custom_styles():
     
     st.markdown("""
         <style>
+        /* Base container styling */
         .main {
             padding: 2rem;
+            max-width: 100%;
+            box-sizing: border-box;
+            overflow-x: hidden;
+        }
+        
+        /* Viewport optimization */
+        .stApp {
+            overflow-x: hidden;
+            width: 100vw;
+            min-height: 100vh;
         }
         
         .stTitle {
@@ -65,12 +76,19 @@ def apply_custom_styles():
             border-color: #153557;
         }
         
-        /* Tab styling */
+        /* Tab styling with resize optimization */
         .stTabs [data-baseweb="tab-list"] {
             gap: 8px;
             background-color: #f8f9fa;
             padding: 0.5rem;
             border-radius: 0.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 48px;
+            width: 100%;
+            box-sizing: border-box;
         }
         
         .stTabs [data-baseweb="tab"] {
