@@ -262,12 +262,8 @@ try:
                 
                 # Display insights
                 levels_insights = analyze_levels(df_selected, selected_centres[0])
-                st.markdown("""
-                <div style='background-color: #f8f9fa; padding: 1rem; border-radius: 0.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
-                """, unsafe_allow_html=True)
                 for insight in levels_insights:
                     st.write(insight)
-                st.markdown("</div>", unsafe_allow_html=True)
             else:
                 st.info("Please select a single market for position analysis")
             
@@ -310,12 +306,8 @@ try:
                 
                 # Display insights
                 trends_insights = analyze_trends(df_selected, selected_centres[0])
-                st.markdown("""
-                <div style='background-color: #f8f9fa; padding: 1rem; border-radius: 0.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
-                """, unsafe_allow_html=True)
                 for insight in trends_insights:
                     st.write(insight)
-                st.markdown("</div>", unsafe_allow_html=True)
             else:
                 st.info("Please select a single market for trends analysis")
         
@@ -354,12 +346,8 @@ try:
                 
                 # Display insights
                 comparative_insights = analyze_comparatives(df_selected, selected_centres[0])
-                st.markdown("""
-                <div style='background-color: #f8f9fa; padding: 1rem; border-radius: 0.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
-                """, unsafe_allow_html=True)
                 for insight in comparative_insights:
                     st.write(insight)
-                st.markdown("</div>", unsafe_allow_html=True)
             else:
                 st.info("Please select a single market for comparative analysis")
             
@@ -386,12 +374,8 @@ try:
                 
                 # Display insights
                 correlation_insights = analyze_key_correlations(df_selected, selected_centres[0])
-                st.markdown("""
-                <div style='background-color: #f8f9fa; padding: 1rem; border-radius: 0.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
-                """, unsafe_allow_html=True)
                 for insight in correlation_insights:
                     st.write(insight)
-                st.markdown("</div>", unsafe_allow_html=True)
             else:
                 st.info("Please select a single market for correlation analysis")
 
