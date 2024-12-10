@@ -183,9 +183,11 @@ try:
         st.markdown("---")  # Add a visual separator
         st.header("AI-Powered Market Analysis")
         
-        ai_col1, ai_col2, ai_col3 = st.columns(3)
+        # Create three columns with equal width
+        ai_cols = st.columns([1, 1, 1])
         
-        with ai_col1:
+        # Market Narrative
+        with ai_cols[0]:
             st.subheader("Market Narrative")
             if len(selected_centres) == 1:
                 narrative = generate_ai_narrative(df_selected, selected_centres[0])
@@ -197,7 +199,8 @@ try:
             else:
                 st.info("Please select a single market for detailed AI analysis")
         
-        with ai_col2:
+        # Price Analysis
+        with ai_cols[1]:
             st.subheader("Price Analysis")
             if len(selected_centres) == 1:
                 price_insights = generate_price_analysis(df_selected, selected_centres[0])
@@ -209,7 +212,8 @@ try:
             else:
                 st.info("Please select a single market for price analysis")
 
-        with ai_col3:
+        # Market Insights
+        with ai_cols[2]:
             st.subheader("Market Insights")
             if len(selected_centres) == 1:
                 market_insights = generate_market_insights(df_selected, selected_centres[0])
