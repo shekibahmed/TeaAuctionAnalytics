@@ -491,13 +491,25 @@ try:
                 if len(selected_centres) == 1:
                     # Controls Section
                     with st.expander("🔄 Comparison Controls", expanded=True):
-                        comparative_metric = st.selectbox(
-                            "Select Comparison Metric",
-                            ["Price", "Volume", "Efficiency"],
-                            key="comparative_metric"
-                        )
+                        col1, col2 = st.columns([2, 1])
+                        with col1:
+                            comparative_metric = st.selectbox(
+                                "Compare By",
+                                ["Price", "Volume", "Efficiency"],
+                                key="comparative_metric",
+                                help="Select the metric for market comparison"
+                            )
+                        with col2:
+                            time_window = st.number_input(
+                                "Time Window",
+                                min_value=1,
+                                max_value=12,
+                                value=6,
+                                help="Number of sales to include in comparison",
+                                key="compare_time_window"
+                            )
                         st.divider()
-                        st.info("Comparing markets of the same type for meaningful analysis")
+                        st.info("✨ Comparing with similar markets for meaningful insights")
                     
                     # Market Comparison Section
                     with st.expander("📊 Market Comparison", expanded=True):
@@ -594,29 +606,50 @@ try:
             # Price and Volume Levels Analysis Tab
             with tabs[3]:  # Price and Volume Levels
                 if len(selected_centres) == 1:
-                    # Controls Section
+                    # Controls Section - Enhanced Mobile Layout
                     with st.expander("💰 Analysis Controls", expanded=True):
-                        # Date Range Selector
-                        date_col1, date_col2 = st.columns(2)
-                        with date_col1:
-                            date_range = st.slider("Select Date Range for Analysis", 
-                                                min_value=1,
-                                                max_value=30,
-                                                value=(1, 30),
-                                                key="date_range_slider")
+                        # Date and Distribution Controls
+                        col1, col2 = st.columns([1, 1])
+                        with col1:
+                            date_range = st.select_slider(
+                                "Analysis Period",
+                                options=list(range(1, 31)),
+                                value=(1, 30),
+                                key="date_range_slider",
+                                help="Select the time period for analysis"
+                            )
                         
-                        with date_col2:
-                            bins = st.slider("Number of Price Distribution Bins", 
-                                          min_value=5,
-                                          max_value=50,
-                                          value=20,
-                                          key="price_bins_slider")
+                        with col2:
+                            bins = st.number_input(
+                                "Price Bins",
+                                min_value=5,
+                                max_value=50,
+                                value=20,
+                                key="price_bins_slider",
+                                help="Number of groups for price distribution"
+                            )
                         
+                        # Volume Analysis Method
                         st.divider()
-                        aggregation_method = st.radio("Volume Aggregation Method",
-                                                    ["Mean", "Moving Average", "Cumulative"],
-                                                    key="volume_aggregation",
-                                                    horizontal=True)
+                        method_col1, method_col2 = st.columns([3, 1])
+                        with method_col1:
+                            aggregation_method = st.radio(
+                                "Volume Analysis",
+                                ["Mean", "Moving Average", "Cumulative"],
+                                key="volume_aggregation",
+                                horizontal=True,
+                                help="Choose how to analyze volume data"
+                            )
+                        with method_col2:
+                            if aggregation_method == "Moving Average":
+                                window = st.number_input(
+                                    "Window",
+                                    min_value=2,
+                                    max_value=10,
+                                    value=3,
+                                    key="ma_window",
+                                    help="Moving average period"
+                                )
                     
                     centre_df = df_selected[df_selected['Centre'] == selected_centres[0]].copy()
                     
