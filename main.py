@@ -472,90 +472,107 @@ try:
             # Comparative Analysis Tab
             with tabs[2]:  # Comparative Analysis
                 if len(selected_centres) == 1:
+                    # Controls Section
                     with st.expander("🔄 Comparison Controls", expanded=True):
                         comparative_metric = st.selectbox(
                             "Select Comparison Metric",
                             ["Price", "Volume", "Efficiency"],
                             key="comparative_metric"
                         )
+                        st.divider()
+                        st.info("Comparing markets of the same type for meaningful analysis")
                     
-                    comparative_fig = go.Figure()
-                    region, tea_type = selected_centres[0].split(' CTC ')
-                    
-                    # Get all markets of same type
-                    similar_markets = [
-                        market for market in df_selected['Centre'].unique()
-                        if market.split(' CTC ')[1] == tea_type
-                    ]
-                    
-                    for market in similar_markets:
-                        market_df = df_selected[df_selected['Centre'] == market].copy()
+                    # Market Comparison Section
+                    with st.expander("📊 Market Comparison", expanded=True):
+                        comparative_fig = go.Figure()
+                        region, tea_type = selected_centres[0].split(' CTC ')
                         
-                        if comparative_metric == "Price":
-                            y_data = market_df['Sales Price(Kg)']
-                            title = f'Price Comparison - {tea_type} Markets'
-                            y_title = 'Price (₹/Kg)'
-                        elif comparative_metric == "Volume":
-                            y_data = market_df['Sold Qty (Ton)'] + market_df['Unsold Qty (Ton)']
-                            title = f'Volume Comparison - {tea_type} Markets'
-                            y_title = 'Volume (Tons)'
-                        else:  # Efficiency
-                            y_data = market_df['Sold Qty (Ton)'] / (market_df['Sold Qty (Ton)'] + market_df['Unsold Qty (Ton)'])
-                            title = f'Efficiency Comparison - {tea_type} Markets'
-                            y_title = 'Efficiency Ratio'
+                        # Get all markets of same type
+                        similar_markets = [
+                            market for market in df_selected['Centre'].unique()
+                            if market.split(' CTC ')[1] == tea_type
+                        ]
                         
-                        comparative_fig.add_trace(go.Scatter(
-                            x=market_df['Sale No'],
-                            y=y_data,
-                            name=market,
-                            mode='lines'
+                        for market in similar_markets:
+                            market_df = df_selected[df_selected['Centre'] == market].copy()
+                            
+                            if comparative_metric == "Price":
+                                y_data = market_df['Sales Price(Kg)']
+                                title = f'Price Comparison - {tea_type} Markets'
+                                y_title = 'Price (₹/Kg)'
+                            elif comparative_metric == "Volume":
+                                y_data = market_df['Sold Qty (Ton)'] + market_df['Unsold Qty (Ton)']
+                                title = f'Volume Comparison - {tea_type} Markets'
+                                y_title = 'Volume (Tons)'
+                            else:  # Efficiency
+                                y_data = market_df['Sold Qty (Ton)'] / (market_df['Sold Qty (Ton)'] + market_df['Unsold Qty (Ton)'])
+                                title = f'Efficiency Comparison - {tea_type} Markets'
+                                y_title = 'Efficiency Ratio'
+                            
+                            comparative_fig.add_trace(go.Scatter(
+                                x=market_df['Sale No'],
+                                y=y_data,
+                                name=market,
+                                mode='lines'
+                            ))
+                        
+                        # Update layout
+                        comparative_fig.update_layout(
+                            title=title,
+                            xaxis_title='Sale Number',
+                            yaxis_title=y_title,
+                            template='plotly_white',
+                            height=300,
+                            showlegend=True,
+                            legend=dict(
+                                orientation="h",
+                                yanchor="bottom",
+                                y=1.02,
+                                xanchor="right",
+                                x=1
+                            )
+                        )
+                        
+                        st.plotly_chart(comparative_fig, use_container_width=True)
+                        
+                    # Correlation Analysis Section
+                    with st.expander("🔄 Correlation Analysis", expanded=True):
+                        # Create correlation heatmap
+                        correlation_matrix = calculate_correlations(df_selected, selected_centres[0])
+                        correlation_fig = go.Figure(data=go.Heatmap(
+                            z=correlation_matrix.values,
+                            x=correlation_matrix.columns,
+                            y=correlation_matrix.index,
+                            colorscale='RdBu',
+                            zmid=0
                         ))
+                        
+                        # Update layout
+                        correlation_fig.update_layout(
+                            title='Metric Correlations',
+                            template='plotly_white',
+                            height=300
+                        )
+                        
+                        st.plotly_chart(correlation_fig, use_container_width=True)
                     
-                    # Update layout
-                    comparative_fig.update_layout(
-                        title=title,
-                        xaxis_title='Sale Number',
-                        yaxis_title=y_title,
-                        template='plotly_white',
-                        height=300
-                    )
-                    
-                    st.plotly_chart(comparative_fig, use_container_width=True)
-                    
-                    # Display insights
-                    comparative_insights = analyze_comparatives(df_selected, selected_centres[0])
-                    for insight in comparative_insights:
-                        st.write(insight)
+                    # Insights Section
+                    with st.expander("📈 Comparative Analysis Insights", expanded=True):
+                        # Market comparison insights
+                        st.subheader("Market Comparison Insights")
+                        comparative_insights = analyze_comparatives(df_selected, selected_centres[0])
+                        for insight in comparative_insights:
+                            st.write(insight)
+                            
+                        st.divider()
+                        
+                        # Correlation insights
+                        st.subheader("Correlation Insights")
+                        correlation_insights = analyze_key_correlations(df_selected, selected_centres[0])
+                        for insight in correlation_insights:
+                            st.write(insight)
                 else:
                     st.info("Please select a single market for comparative analysis")
-                
-                st.subheader("Correlation Analysis")
-                if len(selected_centres) == 1:
-                    # Create correlation heatmap
-                    correlation_matrix = calculate_correlations(df_selected, selected_centres[0])
-                    correlation_fig = go.Figure(data=go.Heatmap(
-                        z=correlation_matrix.values,
-                        x=correlation_matrix.columns,
-                        y=correlation_matrix.index,
-                        colorscale='RdBu',
-                        zmid=0
-                    ))
-                    
-                    # Update layout
-                    correlation_fig.update_layout(
-                        title='Metric Correlations',
-                        template='plotly_white',
-                        height=300
-                    )
-                    
-                    st.plotly_chart(correlation_fig, use_container_width=True)
-                    
-                    # Display insights
-                    correlation_insights = analyze_key_correlations(df_selected, selected_centres[0])
-                    for insight in correlation_insights:
-                        st.write(insight)
-                else:
-                    st.info("Please select a single market for correlation analysis")
             
             # Price and Volume Levels Analysis Tab
             with tabs[3]:  # Price and Volume Levels
