@@ -317,25 +317,53 @@ try:
                 st.plotly_chart(price_fig, use_container_width=True)
                 
                 # Market Efficiency Trend
+                trend_metric = st.selectbox(
+                    "Select Trend Metric",
+                    ["Sold/Total Ratio", "Price/Volume Correlation"],
+                    key="trend_metric"
+                )
+                
                 efficiency_fig = go.Figure()
                 
-                # Calculate efficiency ratio
-                centre_df['Efficiency'] = centre_df['Sold Qty (Ton)'] / (centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)'])
-                
-                efficiency_fig.add_trace(
-                    go.Scatter(
-                        x=centre_df['Sale No'],
-                        y=centre_df['Efficiency'],
-                        name='Market Efficiency',
-                        line=dict(color='#2E8B57', width=2)
+                if trend_metric == "Sold/Total Ratio":
+                    # Calculate efficiency ratio (Sold/Total)
+                    centre_df['Efficiency'] = centre_df['Sold Qty (Ton)'] / (centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)'])
+                    
+                    efficiency_fig.add_trace(
+                        go.Scatter(
+                            x=centre_df['Sale No'],
+                            y=centre_df['Efficiency'],
+                            name='Sold/Total Ratio',
+                            line=dict(color='#2E8B57', width=2)
+                        )
                     )
-                )
+                    
+                    title = 'Market Efficiency - Sold/Total Ratio'
+                    y_title = 'Ratio'
+                    
+                else:  # Price/Volume Correlation
+                    # Calculate rolling correlation between price and volume
+                    window = 3  # Use 3-sale window for correlation
+                    centre_df['Total_Volume'] = centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)']
+                    centre_df['Price_Volume_Corr'] = centre_df['Sales Price(Kg)'].rolling(window=window).corr(centre_df['Total_Volume'])
+                    
+                    efficiency_fig.add_trace(
+                        go.Scatter(
+                            x=centre_df['Sale No'],
+                            y=centre_df['Price_Volume_Corr'],
+                            name='Price/Volume Correlation',
+                            line=dict(color='#2E8B57', width=2)
+                        )
+                    )
+                    
+                    title = 'Market Efficiency - Price/Volume Correlation'
+                    y_title = 'Correlation Coefficient'
                 
                 # Update layout for efficiency trend
                 efficiency_fig.update_layout(
-                    title='Market Efficiency Trend',
+                    title=title,
                     xaxis_title='Sale No',
-                    yaxis_title='Efficiency Ratio',
+                    yaxis_title=y_title,
                     template='plotly_white',
                     height=300,
                     showlegend=True,
