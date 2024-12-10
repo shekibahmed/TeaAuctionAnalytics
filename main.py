@@ -188,7 +188,6 @@ try:
                 <!-- Market Narrative -->
                 <div style='flex: 1;'>
                     <h3 style='color: #1F4E79; margin-bottom: 1rem;'>Market Narrative 📊</h3>
-                    <div style='background-color: #f8f9fa; padding: 1.5rem; border-radius: 0.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); height: 100%;'>
         """, unsafe_allow_html=True)
         
         if len(selected_centres) == 1:
@@ -198,13 +197,11 @@ try:
             st.info("Please select a single market for detailed AI analysis")
             
         st.markdown("""
-                    </div>
                 </div>
                 
                 <!-- Price Analysis -->
                 <div style='flex: 1;'>
                     <h3 style='color: #1F4E79; margin-bottom: 1rem;'>Price Analysis 💰</h3>
-                    <div style='background-color: #f8f9fa; padding: 1.5rem; border-radius: 0.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); height: 100%;'>
         """, unsafe_allow_html=True)
         
         if len(selected_centres) == 1:
@@ -214,13 +211,11 @@ try:
             st.info("Please select a single market for price analysis")
             
         st.markdown("""
-                    </div>
                 </div>
                 
                 <!-- Market Insights -->
                 <div style='flex: 1;'>
                     <h3 style='color: #1F4E79; margin-bottom: 1rem;'>Market Insights 📈</h3>
-                    <div style='background-color: #f8f9fa; padding: 1.5rem; border-radius: 0.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); height: 100%;'>
         """, unsafe_allow_html=True)
         
         if len(selected_centres) == 1:
@@ -230,7 +225,6 @@ try:
             st.info("Please select a single market for market insights")
             
         st.markdown("""
-                    </div>
                 </div>
             </div>
         """, unsafe_allow_html=True)
