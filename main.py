@@ -133,9 +133,9 @@ try:
                         'Metric',
                         *[f'Sale {x}' for x in table_data['Sale No'].tolist()]
                     ],
-                                font=dict(size=11),
-                                align='center',
-                                height=30),
+                               font=dict(size=11),
+                               align='center',
+                               height=30),
                     cells=dict(
                         values=[
                             ['Sold Qty', 'Unsold Qty',
@@ -175,51 +175,69 @@ try:
             st.plotly_chart(fig,
                             use_container_width=True,
                             config=plotly_config)
-            
-            # Add AI-Powered Market Analysis section
-            st.header("AI-Powered Market Analysis")
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.subheader("Market Narrative")
-                narrative = generate_ai_narrative(df_selected, centre)
-                st.write(narrative)
-                
-            with col2:
-                st.subheader("Price Analysis")
-                price_insights = generate_price_analysis(df_selected, centre)
-                st.write(price_insights)
-            
-            # Add Statistical Analysis section
-            st.header("Statistical Analysis")
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                st.subheader("Market Position Analysis")
-                levels_insights = analyze_levels(df_selected, centre)
-                for insight in levels_insights:
-                    st.write(insight)
-                    
-                st.subheader("Market Trends Analysis")
-                trends_insights = analyze_trends(df_selected, centre)
-                for insight in trends_insights:
-                    st.write(insight)
-                    
-            with col2:
-                st.subheader("Comparative Analysis")
-                comparative_insights = analyze_comparatives(df_selected, centre)
-                for insight in comparative_insights:
-                    st.write(insight)
-                    
-                # Add correlation analysis
-                st.subheader("Correlation Analysis")
-                correlation_insights = analyze_key_correlations(df_selected, centre)
-                for insight in correlation_insights:
-                    st.write(insight)
-
         else:
             # Logic for multiple centres remains unchanged
             pass
+
+        # AI-Powered Market Analysis section
+        st.markdown("---")  # Add a visual separator
+        st.header("AI-Powered Market Analysis")
+        
+        ai_col1, ai_col2 = st.columns(2)
+        with ai_col1:
+            st.subheader("Market Narrative")
+            if len(selected_centres) == 1:
+                narrative = generate_ai_narrative(df_selected, selected_centres[0])
+                st.write(narrative)
+            else:
+                st.info("Please select a single market for detailed AI analysis")
+        
+        with ai_col2:
+            st.subheader("Price Analysis")
+            if len(selected_centres) == 1:
+                price_insights = generate_price_analysis(df_selected, selected_centres[0])
+                st.write(price_insights)
+            else:
+                st.info("Please select a single market for price analysis")
+
+        # Statistical Analysis section
+        st.markdown("---")  # Add a visual separator
+        st.header("Statistical Analysis")
+        
+        stat_col1, stat_col2 = st.columns(2)
+        with stat_col1:
+            st.subheader("Market Position Analysis")
+            if len(selected_centres) == 1:
+                levels_insights = analyze_levels(df_selected, selected_centres[0])
+                for insight in levels_insights:
+                    st.write(insight)
+            else:
+                st.info("Please select a single market for position analysis")
+            
+            st.subheader("Market Trends Analysis")
+            if len(selected_centres) == 1:
+                trends_insights = analyze_trends(df_selected, selected_centres[0])
+                for insight in trends_insights:
+                    st.write(insight)
+            else:
+                st.info("Please select a single market for trends analysis")
+        
+        with stat_col2:
+            st.subheader("Comparative Analysis")
+            if len(selected_centres) == 1:
+                comparative_insights = analyze_comparatives(df_selected, selected_centres[0])
+                for insight in comparative_insights:
+                    st.write(insight)
+            else:
+                st.info("Please select a single market for comparative analysis")
+            
+            st.subheader("Correlation Analysis")
+            if len(selected_centres) == 1:
+                correlation_insights = analyze_key_correlations(df_selected, selected_centres[0])
+                for insight in correlation_insights:
+                    st.write(insight)
+            else:
+                st.info("Please select a single market for correlation analysis")
 
 except Exception as e:
     st.error(f"An error occurred: {str(e)}")
