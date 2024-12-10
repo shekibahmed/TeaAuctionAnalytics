@@ -576,83 +576,146 @@ try:
             
             # Price and Volume Levels Analysis Tab
             with tabs[3]:  # Price and Volume Levels
-                with st.expander("💰 Analysis Controls", expanded=True):
-                    # Date Range Selector
-                    date_col1, date_col2 = st.columns(2)
-                with date_col1:
-                    date_range = st.slider("Select Date Range for Analysis", 
-                                        min_value=1,
-                                        max_value=30,
-                                        value=(1, 30),
-                                        key="date_range_slider")
-                
-                with date_col2:
-                    bins = st.slider("Number of Price Distribution Bins", 
-                                  min_value=5,
-                                  max_value=50,
-                                  value=20,
-                                  key="price_bins_slider")
-                
-                # Price Distribution Analysis
                 if len(selected_centres) == 1:
+                    # Controls Section
+                    with st.expander("💰 Analysis Controls", expanded=True):
+                        # Date Range Selector
+                        date_col1, date_col2 = st.columns(2)
+                        with date_col1:
+                            date_range = st.slider("Select Date Range for Analysis", 
+                                                min_value=1,
+                                                max_value=30,
+                                                value=(1, 30),
+                                                key="date_range_slider")
+                        
+                        with date_col2:
+                            bins = st.slider("Number of Price Distribution Bins", 
+                                          min_value=5,
+                                          max_value=50,
+                                          value=20,
+                                          key="price_bins_slider")
+                        
+                        st.divider()
+                        aggregation_method = st.radio("Volume Aggregation Method",
+                                                    ["Mean", "Moving Average", "Cumulative"],
+                                                    key="volume_aggregation",
+                                                    horizontal=True)
+                    
                     centre_df = df_selected[df_selected['Centre'] == selected_centres[0]].copy()
                     
-                    # Create price distribution histogram
-                    hist_fig = go.Figure()
-                    hist_fig.add_trace(go.Histogram(
-                        x=centre_df['Sales Price(Kg)'],
-                        nbinsx=bins,
-                        name='Price Distribution',
-                        marker_color='#1F4E79'
-                    ))
+                    # Price Distribution Section
+                    with st.expander("📊 Price Distribution Analysis", expanded=True):
+                        # Create price distribution histogram
+                        hist_fig = go.Figure()
+                        hist_fig.add_trace(go.Histogram(
+                            x=centre_df['Sales Price(Kg)'],
+                            nbinsx=bins,
+                            name='Price Distribution',
+                            marker_color='#1F4E79'
+                        ))
+                        
+                        hist_fig.update_layout(
+                            title='Price Distribution Analysis',
+                            xaxis_title='Price (₹/Kg)',
+                            yaxis_title='Frequency',
+                            template='plotly_white',
+                            height=300
+                        )
+                        
+                        st.plotly_chart(hist_fig, use_container_width=True)
+                        
+                        # Add price statistics
+                        col1, col2, col3 = st.columns(3)
+                        with col1:
+                            st.metric("Mean Price", f"₹{centre_df['Sales Price(Kg)'].mean():.2f}")
+                        with col2:
+                            st.metric("Median Price", f"₹{centre_df['Sales Price(Kg)'].median():.2f}")
+                        with col3:
+                            st.metric("Price StdDev", f"₹{centre_df['Sales Price(Kg)'].std():.2f}")
                     
-                    hist_fig.update_layout(
-                        title='Price Distribution Analysis',
-                        xaxis_title='Price (₹/Kg)',
-                        yaxis_title='Frequency',
-                        template='plotly_white',
-                        height=300
-                    )
+                    # Volume Analysis Section
+                    with st.expander("📈 Volume Analysis", expanded=True):
+                        volume_fig = go.Figure()
+                        
+                        # Raw volume data
+                        total_volume = centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)']
+                        volume_fig.add_trace(go.Scatter(
+                            x=centre_df['Sale No'],
+                            y=total_volume,
+                            name='Total Volume',
+                            line=dict(color='#2E8B57', width=2)
+                        ))
+                        
+                        # Add aggregation based on selection
+                        if aggregation_method == "Moving Average":
+                            ma_window = 3  # 3-sale moving average
+                            volume_ma = total_volume.rolling(window=ma_window).mean()
+                            volume_fig.add_trace(go.Scatter(
+                                x=centre_df['Sale No'],
+                                y=volume_ma,
+                                name=f'{ma_window}-Sale Moving Average',
+                                line=dict(color='#FF9966', width=2, dash='dash')
+                            ))
+                        elif aggregation_method == "Cumulative":
+                            volume_cumsum = total_volume.cumsum()
+                            volume_fig.add_trace(go.Scatter(
+                                x=centre_df['Sale No'],
+                                y=volume_cumsum,
+                                name='Cumulative Volume',
+                                line=dict(color='#FF9966', width=2, dash='dash')
+                            ))
+                        else:  # Mean
+                            volume_mean = total_volume.mean()
+                            volume_fig.add_trace(go.Scatter(
+                                x=centre_df['Sale No'],
+                                y=[volume_mean] * len(centre_df),
+                                name='Mean Volume',
+                                line=dict(color='#FF9966', width=2, dash='dash')
+                            ))
+                        
+                        volume_fig.update_layout(
+                            title='Volume Analysis',
+                            xaxis_title='Sale No',
+                            yaxis_title='Volume (Tons)',
+                            template='plotly_white',
+                            height=300,
+                            showlegend=True,
+                            legend=dict(
+                                orientation="h",
+                                yanchor="bottom",
+                                y=1.02,
+                                xanchor="right",
+                                x=1
+                            )
+                        )
+                        
+                        st.plotly_chart(volume_fig, use_container_width=True)
+                        
+                        # Add volume statistics
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            st.metric("Total Volume", f"{total_volume.sum():.1f} Tons")
+                        with col2:
+                            st.metric("Average Volume per Sale", f"{total_volume.mean():.1f} Tons")
                     
-                    st.plotly_chart(hist_fig, use_container_width=True)
-                    
-                    # Volume Analysis
-                    volume_fig = go.Figure()
-                    
-                    # Raw volume data
-                    volume_fig.add_trace(go.Scatter(
-                        x=centre_df['Sale No'],
-                        y=centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)'],
-                        name='Total Volume',
-                        line=dict(color='#2E8B57', width=2)
-                    ))
-                    
-                    # Moving Average
-                    ma_window = 3  # 3-sale moving average
-                    volume_ma = (centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)']).rolling(window=ma_window).mean()
-                    volume_fig.add_trace(go.Scatter(
-                        x=centre_df['Sale No'],
-                        y=volume_ma,
-                        name=f'{ma_window}-Sale Moving Average',
-                        line=dict(color='#FF9966', width=2, dash='dash')
-                    ))
-                    
-                    volume_fig.update_layout(
-                        title='Volume Analysis (Raw)',
-                        xaxis_title='Sale No',
-                        yaxis_title='Volume (Tons)',
-                        template='plotly_white',
-                        height=300,
-                        showlegend=True
-                    )
-                    
-                    st.plotly_chart(volume_fig, use_container_width=True)
-                    
-                    # Analysis Options
-                    st.radio("Volume Aggregation",
-                            ["Mean", "Moving Average", "Cumulative"],
-                            key="volume_aggregation",
-                            horizontal=True)
+                    # Summary Section
+                    with st.expander("📋 Summary Insights", expanded=True):
+                        st.markdown("""
+                            #### Key Findings:
+                            
+                            **Price Analysis:**
+                            - Distribution shape and price ranges
+                            - Price volatility and stability periods
+                            
+                            **Volume Analysis:**
+                            - Volume trends and patterns
+                            - Peak periods and seasonal variations
+                            
+                            **Price-Volume Relationship:**
+                            - Correlation between price and volume
+                            - Market efficiency indicators
+                        """)
+                        
                 else:
                     st.info("Please select a single market for price and volume analysis")
 
