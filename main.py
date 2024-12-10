@@ -237,23 +237,43 @@ try:
         with stat_col1:
             st.subheader("Market Position Analysis")
             if len(selected_centres) == 1:
-                # Create market position chart
+                position_metric = st.selectbox(
+                    "Select Position Metric",
+                    ["Price", "Volume", "Efficiency"],
+                    key="position_metric"
+                )
+                
                 position_fig = go.Figure()
                 centre_df = df_selected[df_selected['Centre'] == selected_centres[0]].copy()
                 
-                # Add price levels
+                if position_metric == "Price":
+                    y_data = centre_df['Sales Price(Kg)']
+                    title = 'Price Levels Over Time'
+                    y_title = 'Price (₹/Kg)'
+                    metric_name = 'Price Levels'
+                elif position_metric == "Volume":
+                    y_data = centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)']
+                    title = 'Volume Levels Over Time'
+                    y_title = 'Volume (Tons)'
+                    metric_name = 'Volume Levels'
+                else:  # Efficiency
+                    y_data = centre_df['Sold Qty (Ton)'] / (centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)'])
+                    title = 'Market Efficiency Over Time'
+                    y_title = 'Efficiency Ratio'
+                    metric_name = 'Efficiency Levels'
+                
                 position_fig.add_trace(go.Scatter(
                     x=centre_df['Sale No'],
-                    y=centre_df['Sales Price(Kg)'],
-                    name='Price Levels',
+                    y=y_data,
+                    name=metric_name,
                     line=dict(color='#1F4E79', width=2)
                 ))
                 
                 # Update layout
                 position_fig.update_layout(
-                    title='Price Levels Over Time',
+                    title=title,
                     xaxis_title='Sale Number',
-                    yaxis_title='Price (₹/Kg)',
+                    yaxis_title=y_title,
                     template='plotly_white',
                     height=300
                 )
@@ -388,7 +408,12 @@ try:
         with stat_col2:
             st.subheader("Comparative Analysis")
             if len(selected_centres) == 1:
-                # Create comparative chart
+                comparative_metric = st.selectbox(
+                    "Select Comparison Metric",
+                    ["Price", "Volume", "Efficiency"],
+                    key="comparative_metric"
+                )
+                
                 comparative_fig = go.Figure()
                 region, tea_type = selected_centres[0].split(' CTC ')
                 
@@ -400,18 +425,32 @@ try:
                 
                 for market in similar_markets:
                     market_df = df_selected[df_selected['Centre'] == market].copy()
+                    
+                    if comparative_metric == "Price":
+                        y_data = market_df['Sales Price(Kg)']
+                        title = f'Price Comparison - {tea_type} Markets'
+                        y_title = 'Price (₹/Kg)'
+                    elif comparative_metric == "Volume":
+                        y_data = market_df['Sold Qty (Ton)'] + market_df['Unsold Qty (Ton)']
+                        title = f'Volume Comparison - {tea_type} Markets'
+                        y_title = 'Volume (Tons)'
+                    else:  # Efficiency
+                        y_data = market_df['Sold Qty (Ton)'] / (market_df['Sold Qty (Ton)'] + market_df['Unsold Qty (Ton)'])
+                        title = f'Efficiency Comparison - {tea_type} Markets'
+                        y_title = 'Efficiency Ratio'
+                    
                     comparative_fig.add_trace(go.Scatter(
                         x=market_df['Sale No'],
-                        y=market_df['Sales Price(Kg)'],
+                        y=y_data,
                         name=market,
                         mode='lines'
                     ))
                 
                 # Update layout
                 comparative_fig.update_layout(
-                    title=f'Price Comparison - {tea_type} Markets',
+                    title=title,
                     xaxis_title='Sale Number',
-                    yaxis_title='Price (₹/Kg)',
+                    yaxis_title=y_title,
                     template='plotly_white',
                     height=300
                 )
