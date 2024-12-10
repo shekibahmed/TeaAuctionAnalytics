@@ -175,6 +175,47 @@ try:
             st.plotly_chart(fig,
                             use_container_width=True,
                             config=plotly_config)
+            
+            # Add AI-Powered Market Analysis section
+            st.header("AI-Powered Market Analysis")
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.subheader("Market Narrative")
+                narrative = generate_ai_narrative(df_selected, centre)
+                st.write(narrative)
+                
+            with col2:
+                st.subheader("Price Analysis")
+                price_insights = generate_price_analysis(df_selected, centre)
+                st.write(price_insights)
+            
+            # Add Statistical Analysis section
+            st.header("Statistical Analysis")
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                st.subheader("Market Position Analysis")
+                levels_insights = analyze_levels(df_selected, centre)
+                for insight in levels_insights:
+                    st.write(insight)
+                    
+                st.subheader("Market Trends Analysis")
+                trends_insights = analyze_trends(df_selected, centre)
+                for insight in trends_insights:
+                    st.write(insight)
+                    
+            with col2:
+                st.subheader("Comparative Analysis")
+                comparative_insights = analyze_comparatives(df_selected, centre)
+                for insight in comparative_insights:
+                    st.write(insight)
+                    
+                # Add correlation analysis
+                st.subheader("Correlation Analysis")
+                correlation_insights = analyze_key_correlations(df_selected, centre)
+                for insight in correlation_insights:
+                    st.write(insight)
 
         else:
             # Logic for multiple centres remains unchanged
