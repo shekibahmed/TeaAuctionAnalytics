@@ -249,54 +249,79 @@ try:
             # Market Position Analysis Tab
             with tabs[0]:  # Market Position
                 if len(selected_centres) == 1:
+                    # Controls Section
                     with st.expander("📊 Position Analysis Controls", expanded=True):
                         position_metric = st.selectbox(
                             "Select Position Metric",
                             ["Price", "Volume", "Efficiency"],
                             key="position_metric"
                         )
+                        st.divider()
+                        date_range = st.slider(
+                            "Analysis Period",
+                            min_value=1,
+                            max_value=30,
+                            value=(1, 30),
+                            key="position_date_range"
+                        )
                     
-                    position_fig = go.Figure()
+                    # Data Processing
                     centre_df = df_selected[df_selected['Centre'] == selected_centres[0]].copy()
                     
-                    if position_metric == "Price":
-                        y_data = centre_df['Sales Price(Kg)']
-                        title = 'Price Levels Over Time'
-                        y_title = 'Price (₹/Kg)'
-                        metric_name = 'Price Levels'
-                    elif position_metric == "Volume":
-                        y_data = centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)']
-                        title = 'Volume Levels Over Time'
-                        y_title = 'Volume (Tons)'
-                        metric_name = 'Volume Levels'
-                    else:  # Efficiency
-                        y_data = centre_df['Sold Qty (Ton)'] / (centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)'])
-                        title = 'Market Efficiency Over Time'
-                        y_title = 'Efficiency Ratio'
-                        metric_name = 'Efficiency Levels'
+                    # Visualization Section
+                    with st.expander("📈 Market Position Visualization", expanded=True):
+                        position_fig = go.Figure()
+                        
+                        if position_metric == "Price":
+                            y_data = centre_df['Sales Price(Kg)']
+                            title = 'Price Levels Over Time'
+                            y_title = 'Price (₹/Kg)'
+                            metric_name = 'Price Levels'
+                        elif position_metric == "Volume":
+                            y_data = centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)']
+                            title = 'Volume Levels Over Time'
+                            y_title = 'Volume (Tons)'
+                            metric_name = 'Volume Levels'
+                        else:  # Efficiency
+                            y_data = centre_df['Sold Qty (Ton)'] / (centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)'])
+                            title = 'Market Efficiency Over Time'
+                            y_title = 'Efficiency Ratio'
+                            metric_name = 'Efficiency Levels'
+                        
+                        position_fig.add_trace(go.Scatter(
+                            x=centre_df['Sale No'],
+                            y=y_data,
+                            name=metric_name,
+                            line=dict(color='#1F4E79', width=2)
+                        ))
+                        
+                        # Update layout
+                        position_fig.update_layout(
+                            title=title,
+                            xaxis_title='Sale Number',
+                            yaxis_title=y_title,
+                            template='plotly_white',
+                            height=300
+                        )
+                        
+                        st.plotly_chart(position_fig, use_container_width=True)
                     
-                    position_fig.add_trace(go.Scatter(
-                        x=centre_df['Sale No'],
-                        y=y_data,
-                        name=metric_name,
-                        line=dict(color='#1F4E79', width=2)
-                    ))
-                    
-                    # Update layout
-                    position_fig.update_layout(
-                        title=title,
-                        xaxis_title='Sale Number',
-                        yaxis_title=y_title,
-                        template='plotly_white',
-                        height=300
-                    )
-                    
-                    st.plotly_chart(position_fig, use_container_width=True)
-                    
-                    # Display insights
-                    levels_insights = analyze_levels(df_selected, selected_centres[0])
-                    for insight in levels_insights:
-                        st.write(insight)
+                    # Analysis Section
+                    with st.expander("📊 Position Analysis Insights", expanded=True):
+                        # Summary metrics
+                        col1, col2, col3 = st.columns(3)
+                        with col1:
+                            st.metric("Current Level", f"{y_data.iloc[-1]:.2f}", f"{(y_data.iloc[-1] - y_data.iloc[-2]):.2f}")
+                        with col2:
+                            st.metric("Average", f"{y_data.mean():.2f}")
+                        with col3:
+                            st.metric("Volatility", f"{y_data.std():.2f}")
+                        
+                        st.divider()
+                        # Display insights
+                        levels_insights = analyze_levels(df_selected, selected_centres[0])
+                        for insight in levels_insights:
+                            st.write(insight)
                 else:
                     st.info("Please select a single market for position analysis")
             
