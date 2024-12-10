@@ -76,7 +76,7 @@ def apply_custom_styles():
             border-color: #153557;
         }
         
-        /* Enhanced Tab styling with mobile optimization */
+        /* Enhanced Tab styling with mobile optimization and layout containment */
         .stTabs [data-baseweb="tab-list"] {
             gap: 4px;
             background-color: #f8f9fa;
@@ -92,6 +92,10 @@ def apply_custom_styles():
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
+            contain: layout style paint;
+            will-change: transform;
+            transform: translateZ(0);
+            backface-visibility: hidden;
         }
         
         .stTabs [data-baseweb="tab"] {
@@ -104,9 +108,19 @@ def apply_custom_styles():
             color: #1F4E79;
             font-weight: 500;
             flex: 0 0 auto;
-            transition: all 0.2s ease;
+            transition: transform 0.2s ease;
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
+            contain: content;
+            transform: translateZ(0);
+            will-change: transform;
+        }
+        
+        /* Optimization for tab containers to reduce layout thrashing */
+        .stTabs > div[role="tabpanel"] {
+            contain: layout style;
+            transform: translateZ(0);
+            will-change: transform;
         }
         
         .stTabs [aria-selected="true"] {
