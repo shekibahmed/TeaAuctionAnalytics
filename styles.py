@@ -76,9 +76,9 @@ def apply_custom_styles():
             border-color: #153557;
         }
         
-        /* Tab styling with resize optimization */
+        /* Enhanced Tab styling with mobile optimization */
         .stTabs [data-baseweb="tab-list"] {
-            gap: 8px;
+            gap: 4px;
             background-color: #f8f9fa;
             padding: 0.5rem;
             border-radius: 0.5rem;
@@ -89,20 +89,43 @@ def apply_custom_styles():
             min-height: 48px;
             width: 100%;
             box-sizing: border-box;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
         }
         
         .stTabs [data-baseweb="tab"] {
-            height: 3rem;
-            white-space: pre-wrap;
+            height: auto;
+            min-height: 3rem;
+            padding: 0.5rem 1rem;
+            white-space: normal;
             background-color: #ffffff;
             border-radius: 4px;
             color: #1F4E79;
             font-weight: 500;
+            flex: 0 0 auto;
+            transition: all 0.2s ease;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
         }
         
         .stTabs [aria-selected="true"] {
             background-color: #1F4E79 !important;
             color: white !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        /* Mobile-specific optimizations */
+        @media (max-width: 768px) {
+            .stTabs [data-baseweb="tab-list"] {
+                padding: 0.25rem;
+                gap: 2px;
+            }
+            
+            .stTabs [data-baseweb="tab"] {
+                padding: 0.35rem 0.75rem;
+                font-size: 0.9rem;
+            }
         }
         
         /* Collapsible section styling */

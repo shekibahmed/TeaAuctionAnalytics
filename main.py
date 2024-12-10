@@ -238,32 +238,46 @@ try:
             st.markdown("---")  # Add a visual separator
             st.header("Statistical Analysis")
 
-            # Create tabs for different analysis sections
+            # Enhanced tabs with touch-friendly icons and responsive layout
+            tab_styles = """
+                <style>
+                    .tab-icon { font-size: 1.2em; margin-right: 8px; }
+                    @media (max-width: 768px) {
+                        .tab-icon { display: block; margin: 0 auto 4px; }
+                    }
+                </style>
+            """
+            st.markdown(tab_styles, unsafe_allow_html=True)
+            
             tabs = st.tabs([
-                "Market Position 📊", 
-                "Market Trends 📈", 
-                "Comparative Analysis 🔄", 
-                "Price & Volume Levels 💰"
+                "📊 Position", 
+                "📈 Trends", 
+                "🔄 Compare", 
+                "💰 Levels"
             ])
             
             # Market Position Analysis Tab
             with tabs[0]:  # Market Position
                 if len(selected_centres) == 1:
-                    # Controls Section
-                    with st.expander("📊 Position Analysis Controls", expanded=True):
-                        position_metric = st.selectbox(
-                            "Select Position Metric",
-                            ["Price", "Volume", "Efficiency"],
-                            key="position_metric"
-                        )
-                        st.divider()
-                        date_range = st.slider(
-                            "Analysis Period",
-                            min_value=1,
-                            max_value=30,
-                            value=(1, 30),
-                            key="position_date_range"
-                        )
+                    # Controls Section - Mobile Optimized
+                    with st.expander("📊 Controls", expanded=True):
+                        col1, col2 = st.columns([1, 1])
+                        with col1:
+                            position_metric = st.selectbox(
+                                "Metric",
+                                ["Price", "Volume", "Efficiency"],
+                                key="position_metric",
+                                help="Choose the metric to analyze"
+                            )
+                        with col2:
+                            date_range = st.slider(
+                                "Period",
+                                min_value=1,
+                                max_value=30,
+                                value=(1, 30),
+                                key="position_date_range",
+                                help="Select analysis time period"
+                            )
                     
                     # Data Processing
                     centre_df = df_selected[df_selected['Centre'] == selected_centres[0]].copy()
@@ -328,22 +342,25 @@ try:
             # Market Trends Analysis Tab
             with tabs[1]:  # Market Trends
                 if len(selected_centres) == 1:
-                    # Controls Section
-                    with st.expander("📈 Trend Analysis Options", expanded=True):
-                        trend_metric = st.selectbox(
-                            "Select Trend Metric",
-                            ["Sold/Total Ratio", "Price/Volume Correlation"],
-                            key="trend_metric"
-                        )
-                        st.divider()
-                        window_size = st.slider(
-                            "Correlation Window Size",
-                            min_value=2,
-                            max_value=10,
-                            value=3,
-                            help="Number of sales to consider for rolling calculations",
-                            key="correlation_window"
-                        )
+                    # Controls Section - Mobile Optimized
+                    with st.expander("📈 Options", expanded=True):
+                        col1, col2 = st.columns([1, 1])
+                        with col1:
+                            trend_metric = st.selectbox(
+                                "Metric",
+                                ["Sold/Total Ratio", "Price/Volume Correlation"],
+                                key="trend_metric",
+                                help="Choose trend analysis metric"
+                            )
+                        with col2:
+                            window_size = st.number_input(
+                                "Window",
+                                min_value=2,
+                                max_value=10,
+                                value=3,
+                                help="Sales window for calculations",
+                                key="correlation_window"
+                            )
                     
                     # Data Processing
                     centre_df = df_selected[df_selected['Centre'] == selected_centres[0]].copy()
