@@ -233,88 +233,6 @@ try:
         st.markdown("---")  # Add a visual separator
         st.header("Statistical Analysis")
         
-        # Price and Volume Levels Analysis
-        st.subheader("Price and Volume Levels")
-        
-        # Date Range Selector
-        date_col1, date_col2 = st.columns(2)
-        with date_col1:
-            date_range = st.slider("Select Date Range for Analysis", 
-                                min_value=1,
-                                max_value=30,
-                                value=(1, 30),
-                                key="date_range_slider")
-        
-        with date_col2:
-            bins = st.slider("Number of Price Distribution Bins", 
-                          min_value=5,
-                          max_value=50,
-                          value=20,
-                          key="price_bins_slider")
-        
-        # Price Distribution Analysis
-        if len(selected_centres) == 1:
-            centre_df = df_selected[df_selected['Centre'] == selected_centres[0]].copy()
-            
-            # Create price distribution histogram
-            hist_fig = go.Figure()
-            hist_fig.add_trace(go.Histogram(
-                x=centre_df['Sales Price(Kg)'],
-                nbinsx=bins,
-                name='Price Distribution',
-                marker_color='#1F4E79'
-            ))
-            
-            hist_fig.update_layout(
-                title='Price Distribution Analysis',
-                xaxis_title='Price (₹/Kg)',
-                yaxis_title='Frequency',
-                template='plotly_white',
-                height=300
-            )
-            
-            st.plotly_chart(hist_fig, use_container_width=True)
-            
-            # Volume Analysis
-            volume_fig = go.Figure()
-            
-            # Raw volume data
-            volume_fig.add_trace(go.Scatter(
-                x=centre_df['Sale No'],
-                y=centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)'],
-                name='Total Volume',
-                line=dict(color='#2E8B57', width=2)
-            ))
-            
-            # Moving Average
-            ma_window = 3  # 3-sale moving average
-            volume_ma = (centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)']).rolling(window=ma_window).mean()
-            volume_fig.add_trace(go.Scatter(
-                x=centre_df['Sale No'],
-                y=volume_ma,
-                name=f'{ma_window}-Sale Moving Average',
-                line=dict(color='#FF9966', width=2, dash='dash')
-            ))
-            
-            volume_fig.update_layout(
-                title='Volume Analysis (Raw)',
-                xaxis_title='Sale No',
-                yaxis_title='Volume (Tons)',
-                template='plotly_white',
-                height=300,
-                showlegend=True
-            )
-            
-            st.plotly_chart(volume_fig, use_container_width=True)
-            
-            # Analysis Options
-            st.radio("Volume Aggregation",
-                    ["Mean", "Moving Average", "Cumulative"],
-                    key="volume_aggregation",
-                    horizontal=True)
-        else:
-            st.info("Please select a single market for price and volume analysis")
-
         stat_col1, stat_col2 = st.columns(2)
         with stat_col1:
             st.subheader("Market Position Analysis")
@@ -573,6 +491,88 @@ try:
                     st.write(insight)
             else:
                 st.info("Please select a single market for correlation analysis")
+            
+            # Price and Volume Levels Analysis
+            st.subheader("Price and Volume Levels")
+            
+            # Date Range Selector
+            date_col1, date_col2 = st.columns(2)
+            with date_col1:
+                date_range = st.slider("Select Date Range for Analysis", 
+                                    min_value=1,
+                                    max_value=30,
+                                    value=(1, 30),
+                                    key="date_range_slider")
+            
+            with date_col2:
+                bins = st.slider("Number of Price Distribution Bins", 
+                              min_value=5,
+                              max_value=50,
+                              value=20,
+                              key="price_bins_slider")
+            
+            # Price Distribution Analysis
+            if len(selected_centres) == 1:
+                centre_df = df_selected[df_selected['Centre'] == selected_centres[0]].copy()
+                
+                # Create price distribution histogram
+                hist_fig = go.Figure()
+                hist_fig.add_trace(go.Histogram(
+                    x=centre_df['Sales Price(Kg)'],
+                    nbinsx=bins,
+                    name='Price Distribution',
+                    marker_color='#1F4E79'
+                ))
+                
+                hist_fig.update_layout(
+                    title='Price Distribution Analysis',
+                    xaxis_title='Price (₹/Kg)',
+                    yaxis_title='Frequency',
+                    template='plotly_white',
+                    height=300
+                )
+                
+                st.plotly_chart(hist_fig, use_container_width=True)
+                
+                # Volume Analysis
+                volume_fig = go.Figure()
+                
+                # Raw volume data
+                volume_fig.add_trace(go.Scatter(
+                    x=centre_df['Sale No'],
+                    y=centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)'],
+                    name='Total Volume',
+                    line=dict(color='#2E8B57', width=2)
+                ))
+                
+                # Moving Average
+                ma_window = 3  # 3-sale moving average
+                volume_ma = (centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)']).rolling(window=ma_window).mean()
+                volume_fig.add_trace(go.Scatter(
+                    x=centre_df['Sale No'],
+                    y=volume_ma,
+                    name=f'{ma_window}-Sale Moving Average',
+                    line=dict(color='#FF9966', width=2, dash='dash')
+                ))
+                
+                volume_fig.update_layout(
+                    title='Volume Analysis (Raw)',
+                    xaxis_title='Sale No',
+                    yaxis_title='Volume (Tons)',
+                    template='plotly_white',
+                    height=300,
+                    showlegend=True
+                )
+                
+                st.plotly_chart(volume_fig, use_container_width=True)
+                
+                # Analysis Options
+                st.radio("Volume Aggregation",
+                        ["Mean", "Moving Average", "Cumulative"],
+                        key="volume_aggregation",
+                        horizontal=True)
+            else:
+                st.info("Please select a single market for price and volume analysis")
 
 except Exception as e:
     st.error(f"An error occurred: {str(e)}")
