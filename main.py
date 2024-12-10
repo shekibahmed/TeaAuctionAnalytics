@@ -328,120 +328,144 @@ try:
             # Market Trends Analysis Tab
             with tabs[1]:  # Market Trends
                 if len(selected_centres) == 1:
+                    # Controls Section
                     with st.expander("📈 Trend Analysis Options", expanded=True):
-                        centre_df = df_selected[df_selected['Centre'] == selected_centres[0]].copy()
-                        centre_df = centre_df.sort_values('Sale No')
-                    
-                    # Price Trend Analysis
-                    price_fig = go.Figure()
-                    
-                    # Add actual price line
-                    price_fig.add_trace(
-                        go.Scatter(
-                            x=centre_df['Sale No'],
-                            y=centre_df['Sales Price(Kg)'],
-                            name='Actual Price',
-                            line=dict(color='#1F4E79', width=2)
+                        trend_metric = st.selectbox(
+                            "Select Trend Metric",
+                            ["Sold/Total Ratio", "Price/Volume Correlation"],
+                            key="trend_metric"
                         )
-                    )
-                    
-                    # Add trend line
-                    z = np.polyfit(range(len(centre_df)), centre_df['Sales Price(Kg)'], 1)
-                    p = np.poly1d(z)
-                    price_fig.add_trace(
-                        go.Scatter(
-                            x=centre_df['Sale No'],
-                            y=p(range(len(centre_df))),
-                            name='Trend Line',
-                            line=dict(color='#FF9966', width=2, dash='dash')
+                        st.divider()
+                        window_size = st.slider(
+                            "Correlation Window Size",
+                            min_value=2,
+                            max_value=10,
+                            value=3,
+                            help="Number of sales to consider for rolling calculations",
+                            key="correlation_window"
                         )
-                    )
                     
-                    # Update layout for price trend
-                    price_fig.update_layout(
-                        title='Price Trend Analysis',
-                        xaxis_title='Sale No',
-                        yaxis_title='Price (₹/Kg)',
-                        template='plotly_white',
-                        height=300,
-                        showlegend=True,
-                        legend=dict(
-                            orientation="h",
-                            yanchor="bottom",
-                            y=1.02,
-                            xanchor="right",
-                            x=1
-                        )
-                    )
+                    # Data Processing
+                    centre_df = df_selected[df_selected['Centre'] == selected_centres[0]].copy()
+                    centre_df = centre_df.sort_values('Sale No')
                     
-                    st.plotly_chart(price_fig, use_container_width=True)
-                    
-                    # Market Efficiency Trend
-                    trend_metric = st.selectbox(
-                        "Select Trend Metric",
-                        ["Sold/Total Ratio", "Price/Volume Correlation"],
-                        key="trend_metric"
-                    )
-                    
-                    efficiency_fig = go.Figure()
-                    
-                    if trend_metric == "Sold/Total Ratio":
-                        # Calculate efficiency ratio (Sold/Total)
-                        centre_df['Efficiency'] = centre_df['Sold Qty (Ton)'] / (centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)'])
+                    # Price Trend Visualization
+                    with st.expander("📊 Price Trend Analysis", expanded=True):
+                        price_fig = go.Figure()
                         
-                        efficiency_fig.add_trace(
+                        # Add actual price line
+                        price_fig.add_trace(
                             go.Scatter(
                                 x=centre_df['Sale No'],
-                                y=centre_df['Efficiency'],
-                                name='Sold/Total Ratio',
-                                line=dict(color='#2E8B57', width=2)
+                                y=centre_df['Sales Price(Kg)'],
+                                name='Actual Price',
+                                line=dict(color='#1F4E79', width=2)
                             )
                         )
                         
-                        title = 'Market Efficiency - Sold/Total Ratio'
-                        y_title = 'Ratio'
-                        
-                    else:  # Price/Volume Correlation
-                        # Calculate rolling correlation between price and volume
-                        window = 3  # Use 3-sale window for correlation
-                        centre_df['Total_Volume'] = centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)']
-                        centre_df['Price_Volume_Corr'] = centre_df['Sales Price(Kg)'].rolling(window=window).corr(centre_df['Total_Volume'])
-                        
-                        efficiency_fig.add_trace(
+                        # Add trend line
+                        z = np.polyfit(range(len(centre_df)), centre_df['Sales Price(Kg)'], 1)
+                        p = np.poly1d(z)
+                        price_fig.add_trace(
                             go.Scatter(
                                 x=centre_df['Sale No'],
-                                y=centre_df['Price_Volume_Corr'],
-                                name='Price/Volume Correlation',
-                                line=dict(color='#2E8B57', width=2)
+                                y=p(range(len(centre_df))),
+                                name='Trend Line',
+                                line=dict(color='#FF9966', width=2, dash='dash')
                             )
                         )
                         
-                        title = 'Market Efficiency - Price/Volume Correlation'
-                        y_title = 'Correlation Coefficient'
-                    
-                    # Update layout for efficiency trend
-                    efficiency_fig.update_layout(
-                        title=title,
-                        xaxis_title='Sale No',
-                        yaxis_title=y_title,
-                        template='plotly_white',
-                        height=300,
-                        showlegend=True,
-                        legend=dict(
-                            orientation="h",
-                            yanchor="bottom",
-                            y=1.02,
-                            xanchor="right",
-                            x=1
+                        # Update layout for price trend
+                        price_fig.update_layout(
+                            title='Price Trend Analysis',
+                            xaxis_title='Sale No',
+                            yaxis_title='Price (₹/Kg)',
+                            template='plotly_white',
+                            height=300,
+                            showlegend=True,
+                            legend=dict(
+                                orientation="h",
+                                yanchor="bottom",
+                                y=1.02,
+                                xanchor="right",
+                                x=1
+                            )
                         )
-                    )
+                        
+                        st.plotly_chart(price_fig, use_container_width=True)
                     
-                    st.plotly_chart(efficiency_fig, use_container_width=True)
+                    # Market Efficiency Visualization
+                    with st.expander("📈 Market Efficiency Analysis", expanded=True):
+                        efficiency_fig = go.Figure()
+                        
+                        if trend_metric == "Sold/Total Ratio":
+                            # Calculate efficiency ratio (Sold/Total)
+                            centre_df['Efficiency'] = centre_df['Sold Qty (Ton)'] / (centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)'])
+                            
+                            efficiency_fig.add_trace(
+                                go.Scatter(
+                                    x=centre_df['Sale No'],
+                                    y=centre_df['Efficiency'],
+                                    name='Sold/Total Ratio',
+                                    line=dict(color='#2E8B57', width=2)
+                                )
+                            )
+                            
+                            title = 'Market Efficiency - Sold/Total Ratio'
+                            y_title = 'Ratio'
+                            
+                        else:  # Price/Volume Correlation
+                            # Calculate rolling correlation between price and volume
+                            centre_df['Total_Volume'] = centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)']
+                            centre_df['Price_Volume_Corr'] = centre_df['Sales Price(Kg)'].rolling(window=window_size).corr(centre_df['Total_Volume'])
+                            
+                            efficiency_fig.add_trace(
+                                go.Scatter(
+                                    x=centre_df['Sale No'],
+                                    y=centre_df['Price_Volume_Corr'],
+                                    name='Price/Volume Correlation',
+                                    line=dict(color='#2E8B57', width=2)
+                                )
+                            )
+                            
+                            title = 'Market Efficiency - Price/Volume Correlation'
+                            y_title = 'Correlation Coefficient'
+                        
+                        # Update layout for efficiency trend
+                        efficiency_fig.update_layout(
+                            title=title,
+                            xaxis_title='Sale No',
+                            yaxis_title=y_title,
+                            template='plotly_white',
+                            height=300,
+                            showlegend=True,
+                            legend=dict(
+                                orientation="h",
+                                yanchor="bottom",
+                                y=1.02,
+                                xanchor="right",
+                                x=1
+                            )
+                        )
+                        
+                        st.plotly_chart(efficiency_fig, use_container_width=True)
                     
-                    # Display insights
-                    trends_insights = analyze_trends(df_selected, selected_centres[0])
-                    for insight in trends_insights:
-                        st.write(insight)
+                    # Insights Section
+                    with st.expander("📊 Trend Analysis Insights", expanded=True):
+                        # Summary metrics
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            price_change = centre_df['Sales Price(Kg)'].iloc[-1] - centre_df['Sales Price(Kg)'].iloc[0]
+                            st.metric("Overall Price Change", f"₹{price_change:.2f}", f"{(price_change / centre_df['Sales Price(Kg)'].iloc[0] * 100):.1f}%")
+                        with col2:
+                            avg_efficiency = centre_df['Sold Qty (Ton)'].sum() / (centre_df['Sold Qty (Ton)'].sum() + centre_df['Unsold Qty (Ton)'].sum())
+                            st.metric("Average Market Efficiency", f"{avg_efficiency:.1%}")
+                        
+                        st.divider()
+                        # Display insights
+                        trends_insights = analyze_trends(df_selected, selected_centres[0])
+                        for insight in trends_insights:
+                            st.write(insight)
                 else:
                     st.info("Please select a single market for trends analysis")
             
