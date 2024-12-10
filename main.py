@@ -269,40 +269,86 @@ try:
             
             st.subheader("Market Trends Analysis")
             if len(selected_centres) == 1:
-                # Create trends chart
-                trends_fig = make_subplots(specs=[[{"secondary_y": True}]])
                 centre_df = df_selected[df_selected['Centre'] == selected_centres[0]].copy()
+                centre_df = centre_df.sort_values('Sale No')
                 
-                # Add volume trend
-                trends_fig.add_trace(
-                    go.Bar(
-                        x=centre_df['Sale No'],
-                        y=centre_df['Sold Qty (Ton)'],
-                        name='Volume',
-                        marker_color='#FF9966'
-                    ),
-                    secondary_y=False
-                )
+                # Price Trend Analysis
+                price_fig = go.Figure()
                 
-                # Add price trend
-                trends_fig.add_trace(
+                # Add actual price line
+                price_fig.add_trace(
                     go.Scatter(
                         x=centre_df['Sale No'],
-                        y=centre_df['Sales Price(Kg)'].rolling(window=3).mean(),
-                        name='Price Trend',
+                        y=centre_df['Sales Price(Kg)'],
+                        name='Actual Price',
                         line=dict(color='#1F4E79', width=2)
-                    ),
-                    secondary_y=True
+                    )
                 )
                 
-                # Update layout
-                trends_fig.update_layout(
-                    title='Volume and Price Trends',
+                # Add trend line
+                z = np.polyfit(range(len(centre_df)), centre_df['Sales Price(Kg)'], 1)
+                p = np.poly1d(z)
+                price_fig.add_trace(
+                    go.Scatter(
+                        x=centre_df['Sale No'],
+                        y=p(range(len(centre_df))),
+                        name='Trend Line',
+                        line=dict(color='#FF9966', width=2, dash='dash')
+                    )
+                )
+                
+                # Update layout for price trend
+                price_fig.update_layout(
+                    title='Price Trend Analysis',
+                    xaxis_title='Sale No',
+                    yaxis_title='Price (₹/Kg)',
                     template='plotly_white',
-                    height=300
+                    height=300,
+                    showlegend=True,
+                    legend=dict(
+                        orientation="h",
+                        yanchor="bottom",
+                        y=1.02,
+                        xanchor="right",
+                        x=1
+                    )
                 )
                 
-                st.plotly_chart(trends_fig, use_container_width=True)
+                st.plotly_chart(price_fig, use_container_width=True)
+                
+                # Market Efficiency Trend
+                efficiency_fig = go.Figure()
+                
+                # Calculate efficiency ratio
+                centre_df['Efficiency'] = centre_df['Sold Qty (Ton)'] / (centre_df['Sold Qty (Ton)'] + centre_df['Unsold Qty (Ton)'])
+                
+                efficiency_fig.add_trace(
+                    go.Scatter(
+                        x=centre_df['Sale No'],
+                        y=centre_df['Efficiency'],
+                        name='Market Efficiency',
+                        line=dict(color='#2E8B57', width=2)
+                    )
+                )
+                
+                # Update layout for efficiency trend
+                efficiency_fig.update_layout(
+                    title='Market Efficiency Trend',
+                    xaxis_title='Sale No',
+                    yaxis_title='Efficiency Ratio',
+                    template='plotly_white',
+                    height=300,
+                    showlegend=True,
+                    legend=dict(
+                        orientation="h",
+                        yanchor="bottom",
+                        y=1.02,
+                        xanchor="right",
+                        x=1
+                    )
+                )
+                
+                st.plotly_chart(efficiency_fig, use_container_width=True)
                 
                 # Display insights
                 trends_insights = analyze_trends(df_selected, selected_centres[0])
