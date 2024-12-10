@@ -234,18 +234,22 @@ try:
         st.header("Statistical Analysis")
 
         # Create tabs for different analysis sections
-        position_tab, trends_tab, comparative_tab, levels_tab = st.tabs([
-            "Market Position", "Market Trends", "Comparative Analysis", "Price & Volume Levels"
+        tabs = st.tabs([
+            "Market Position 📊", 
+            "Market Trends 📈", 
+            "Comparative Analysis 🔄", 
+            "Price & Volume Levels 💰"
         ])
         
         # Market Position Analysis Tab
-        with position_tab:
+        with tabs[0]:  # Market Position
             if len(selected_centres) == 1:
-                position_metric = st.selectbox(
-                    "Select Position Metric",
-                    ["Price", "Volume", "Efficiency"],
-                    key="position_metric"
-                )
+                with st.expander("📊 Position Analysis Controls", expanded=True):
+                    position_metric = st.selectbox(
+                        "Select Position Metric",
+                        ["Price", "Volume", "Efficiency"],
+                        key="position_metric"
+                    )
                 
                 position_fig = go.Figure()
                 centre_df = df_selected[df_selected['Centre'] == selected_centres[0]].copy()
@@ -292,11 +296,11 @@ try:
                 st.info("Please select a single market for position analysis")
         
         # Market Trends Analysis Tab
-        with trends_tab:
-            st.subheader("Market Trends Analysis")
+        with tabs[1]:  # Market Trends
             if len(selected_centres) == 1:
-                centre_df = df_selected[df_selected['Centre'] == selected_centres[0]].copy()
-                centre_df = centre_df.sort_values('Sale No')
+                with st.expander("📈 Trend Analysis Options", expanded=True):
+                    centre_df = df_selected[df_selected['Centre'] == selected_centres[0]].copy()
+                    centre_df = centre_df.sort_values('Sale No')
                 
                 # Price Trend Analysis
                 price_fig = go.Figure()
@@ -412,14 +416,14 @@ try:
                 st.info("Please select a single market for trends analysis")
         
         # Comparative Analysis Tab
-        with comparative_tab:
-            st.subheader("Comparative Analysis")
+        with tabs[2]:  # Comparative Analysis
             if len(selected_centres) == 1:
-                comparative_metric = st.selectbox(
-                    "Select Comparison Metric",
-                    ["Price", "Volume", "Efficiency"],
-                    key="comparative_metric"
-                )
+                with st.expander("🔄 Comparison Controls", expanded=True):
+                    comparative_metric = st.selectbox(
+                        "Select Comparison Metric",
+                        ["Price", "Volume", "Efficiency"],
+                        key="comparative_metric"
+                    )
                 
                 comparative_fig = go.Figure()
                 region, tea_type = selected_centres[0].split(' CTC ')
@@ -500,11 +504,10 @@ try:
                 st.info("Please select a single market for correlation analysis")
         
         # Price and Volume Levels Analysis Tab
-        with levels_tab:
-            st.subheader("Price and Volume Levels")
-            
-            # Date Range Selector
-            date_col1, date_col2 = st.columns(2)
+        with tabs[3]:  # Price and Volume Levels
+            with st.expander("💰 Analysis Controls", expanded=True):
+                # Date Range Selector
+                date_col1, date_col2 = st.columns(2)
             with date_col1:
                 date_range = st.slider("Select Date Range for Analysis", 
                                     min_value=1,

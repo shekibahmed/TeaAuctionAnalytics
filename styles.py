@@ -64,5 +64,42 @@ def apply_custom_styles():
             background-color: #153557;
             border-color: #153557;
         }
+        
+        /* Tab styling */
+        .stTabs [data-baseweb="tab-list"] {
+            gap: 8px;
+            background-color: #f8f9fa;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+        }
+        
+        .stTabs [data-baseweb="tab"] {
+            height: 3rem;
+            white-space: pre-wrap;
+            background-color: #ffffff;
+            border-radius: 4px;
+            color: #1F4E79;
+            font-weight: 500;
+        }
+        
+        .stTabs [aria-selected="true"] {
+            background-color: #1F4E79 !important;
+            color: white !important;
+        }
+        
+        /* Collapsible section styling */
+        .streamlit-expanderHeader {
+            background-color: #f8f9fa;
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            font-weight: 600;
+            color: #1F4E79;
+        }
+        
+        .streamlit-expanderContent {
+            border: 1px solid #e1e4e8;
+            border-radius: 0 0 0.5rem 0.5rem;
+            padding: 1rem;
+        }
         </style>
     """, unsafe_allow_html=True)
