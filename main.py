@@ -229,13 +229,17 @@ try:
             </div>
         """, unsafe_allow_html=True)
 
-        # Statistical Analysis section
+        # Statistical Analysis section with tabs
         st.markdown("---")  # Add a visual separator
         st.header("Statistical Analysis")
+
+        # Create tabs for different analysis sections
+        position_tab, trends_tab, comparative_tab, levels_tab = st.tabs([
+            "Market Position", "Market Trends", "Comparative Analysis", "Price & Volume Levels"
+        ])
         
-        stat_col1, stat_col2 = st.columns(2)
-        with stat_col1:
-            st.subheader("Market Position Analysis")
+        # Market Position Analysis Tab
+        with position_tab:
             if len(selected_centres) == 1:
                 position_metric = st.selectbox(
                     "Select Position Metric",
@@ -286,7 +290,9 @@ try:
                     st.write(insight)
             else:
                 st.info("Please select a single market for position analysis")
-            
+        
+        # Market Trends Analysis Tab
+        with trends_tab:
             st.subheader("Market Trends Analysis")
             if len(selected_centres) == 1:
                 centre_df = df_selected[df_selected['Centre'] == selected_centres[0]].copy()
@@ -405,7 +411,8 @@ try:
             else:
                 st.info("Please select a single market for trends analysis")
         
-        with stat_col2:
+        # Comparative Analysis Tab
+        with comparative_tab:
             st.subheader("Comparative Analysis")
             if len(selected_centres) == 1:
                 comparative_metric = st.selectbox(
@@ -491,8 +498,9 @@ try:
                     st.write(insight)
             else:
                 st.info("Please select a single market for correlation analysis")
-            
-            # Price and Volume Levels Analysis
+        
+        # Price and Volume Levels Analysis Tab
+        with levels_tab:
             st.subheader("Price and Volume Levels")
             
             # Date Range Selector
