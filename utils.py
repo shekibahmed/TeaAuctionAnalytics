@@ -243,7 +243,13 @@ def analyze_levels(df: pd.DataFrame, centre: str) -> List[str]:
 def analyze_trends(df: pd.DataFrame, centre: str) -> List[str]:
     """Analyze time-series patterns and changes"""
     insights = []
-    centre_df = df[df['Centre'] == centre].sort_values('Sale No').copy()
+    centre_df = df[df['Centre'] == centre].copy()
+    
+    if centre_df.empty:
+        return ["No data available for the selected market."]
+    
+    # Sort by Sale No - handle sorting with ascending parameter to fix error
+    centre_df = centre_df.sort_values(by='Sale No', ascending=True)
 
     # Calculate weighted average prices for trend analysis
     centre_df['Weighted_Price'] = (
@@ -297,9 +303,16 @@ def analyze_comparatives(df: pd.DataFrame, centre: str) -> List[str]:
     insights = []
     
     try:
+        # Handle empty dataframe
+        if df.empty:
+            return ["No data available for analysis."]
+            
         # Extract region and tea type from centre name
+        if ' CTC ' not in centre:
+            return ["Invalid market format. Expected format: {region} CTC {type}"]
+            
         region, tea_type = centre.split(' CTC ')
-        tea_type = tea_type.strip()  # Clean any whitespace
+        tea_type = tea_type.strip() if tea_type else ""  # Clean any whitespace
         
         # Filter markets by region and tea type for fair comparison
         filtered_markets = [
@@ -430,7 +443,14 @@ def generate_ai_narrative(df: pd.DataFrame, centre: str) -> str:
             return "AI narrative generation unavailable: OpenAI API key not found in environment variables."
 
         client = openai.OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
-        centre_df = df[df['Centre'] == centre].sort_values('Sale No').copy()
+        
+        # Check if data is available
+        filtered_df = df[df['Centre'] == centre].copy()
+        if filtered_df.empty:
+            return "No data available for the selected market."
+            
+        # Sort by Sale No with proper syntax
+        centre_df = filtered_df.sort_values(by='Sale No', ascending=True)
 
         # Calculate comprehensive metrics
         current_price = centre_df['Sales Price(Kg)'].iloc[-1]
@@ -488,7 +508,14 @@ def generate_price_analysis(df: pd.DataFrame, centre: str) -> str:
             return "Price analysis unavailable: OpenAI API key not found in environment variables."
 
         client = openai.OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
-        centre_df = df[df['Centre'] == centre].sort_values('Sale No').copy()
+        
+        # Check if data is available
+        filtered_df = df[df['Centre'] == centre].copy()
+        if filtered_df.empty:
+            return "No data available for the selected market."
+            
+        # Sort by Sale No with proper syntax
+        centre_df = filtered_df.sort_values(by='Sale No', ascending=True)
 
         # Calculate comprehensive price metrics
         current_price = centre_df['Sales Price(Kg)'].iloc[-1]
@@ -558,7 +585,14 @@ def generate_market_insights(df: pd.DataFrame, centre: str) -> str:
             return "Market insights unavailable: OpenAI API key not found in environment variables."
 
         client = openai.OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
-        centre_df = df[df['Centre'] == centre].sort_values('Sale No').copy()
+        
+        # Check if data is available
+        filtered_df = df[df['Centre'] == centre].copy()
+        if filtered_df.empty:
+            return "No data available for the selected market."
+            
+        # Sort by Sale No with proper syntax
+        centre_df = filtered_df.sort_values(by='Sale No', ascending=True)
 
         # Calculate comprehensive market metrics
         market_share = centre_df['Sold Qty (Ton)'].sum(
