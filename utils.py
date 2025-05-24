@@ -78,18 +78,42 @@ def process_excel_data(file):
         # Add debug logging
         logging.debug(f"Reading file: {file.name}")
         
-        # Detect file type and use appropriate reader
+        # Reset file pointer to beginning to ensure we read from the start
+        file.seek(0)
+        
+        # Detect file type and use appropriate reader with error handling
         if file.name.endswith('.csv'):
-            df = pd.read_csv(file)
-            logging.debug("Reading CSV file")
+            try:
+                df = pd.read_csv(file)
+                logging.debug("Reading CSV file")
+            except Exception as e:
+                logging.error(f"Error reading CSV file: {str(e)}")
+                # Try with different encoding if standard fails
+                file.seek(0)
+                df = pd.read_csv(file, encoding='latin1')
+                logging.debug("Reading CSV file with latin1 encoding")
         elif file.name.endswith('.xls'):
             # For older .xls files
-            df = pd.read_excel(file, engine='xlrd')
-            logging.debug("Reading XLS file with xlrd engine")
+            try:
+                df = pd.read_excel(file, engine='xlrd')
+                logging.debug("Reading XLS file with xlrd engine")
+            except Exception as e:
+                logging.error(f"Error with xlrd engine: {str(e)}")
+                # Try openpyxl as fallback
+                file.seek(0)
+                df = pd.read_excel(file, engine='openpyxl')
+                logging.debug("Fallback to openpyxl for XLS file")
         elif file.name.endswith('.xlsx'):
             # For newer .xlsx files
-            df = pd.read_excel(file, engine='openpyxl')
-            logging.debug("Reading XLSX file with openpyxl engine")
+            try:
+                df = pd.read_excel(file, engine='openpyxl')
+                logging.debug("Reading XLSX file with openpyxl engine")
+            except Exception as e:
+                logging.error(f"Error with openpyxl engine: {str(e)}")
+                # Try a more resilient approach if available
+                file.seek(0)
+                df = pd.read_excel(file, engine='openpyxl', storage_options={'mode': 'rb'})
+                logging.debug("Reading XLSX file with binary mode")
         else:
             raise ValueError(f"Unsupported file format. Please use .xlsx, .xls, or .csv files")
                 
@@ -160,7 +184,7 @@ def process_excel_data(file):
     df['Unsold Qty (Ton)'] = pd.to_numeric(df['Unsold Qty (Ton)'])
 
     # Standardize market categories
-    df['Centre'] = df['Centre'].apply(standardize_market_category)
+    df['Centre'] = df['Centre'].astype(str).apply(standardize_market_category)
 
     return df
 
@@ -169,10 +193,17 @@ def analyze_levels(df: pd.DataFrame, centre: str) -> List[str]:
     """Analyze current market position and absolute values"""
     insights = []
     centre_df = df[df['Centre'] == centre].copy()
+    
+    if centre_df.empty:
+        return ["No data available for the selected market."]
 
     # Latest market position
     latest_sale = centre_df['Sale No'].max()
-    latest_data = centre_df[centre_df['Sale No'] == latest_sale].iloc[0]
+    latest_data_df = centre_df[centre_df['Sale No'] == latest_sale]
+    if latest_data_df.empty:
+        return ["No data available for the latest sale period."]
+    
+    latest_data = latest_data_df.iloc[0]
 
     # Price level analysis with weighted average
     weighted_avg_price = (
@@ -340,9 +371,14 @@ def analyze_comparatives(df: pd.DataFrame, centre: str) -> List[str]:
         logging.error(f"Error in comparative analysis: {str(e)}")
         return [f"Error in comparative analysis: {str(e)}"]
 
-def calculate_weighted_price(data: pd.DataFrame) -> float:
+def calculate_weighted_price(data: pd.DataFrame | pd.Series) -> float:
     """Calculate weighted average price for a given dataset using batch processing"""
     batch_size = 1000  # Define batch size for processing
+    
+    # Ensure we have a DataFrame
+    if isinstance(data, pd.Series):
+        return 0
+        
     if len(data) == 0:
         return 0
 
