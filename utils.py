@@ -78,42 +78,18 @@ def process_excel_data(file):
         # Add debug logging
         logging.debug(f"Reading file: {file.name}")
         
-        # Reset file pointer to beginning to ensure we read from the start
-        file.seek(0)
-        
-        # Detect file type and use appropriate reader with error handling
+        # Detect file type and use appropriate reader
         if file.name.endswith('.csv'):
-            try:
-                df = pd.read_csv(file)
-                logging.debug("Reading CSV file")
-            except Exception as e:
-                logging.error(f"Error reading CSV file: {str(e)}")
-                # Try with different encoding if standard fails
-                file.seek(0)
-                df = pd.read_csv(file, encoding='latin1')
-                logging.debug("Reading CSV file with latin1 encoding")
+            df = pd.read_csv(file)
+            logging.debug("Reading CSV file")
         elif file.name.endswith('.xls'):
             # For older .xls files
-            try:
-                df = pd.read_excel(file, engine='xlrd')
-                logging.debug("Reading XLS file with xlrd engine")
-            except Exception as e:
-                logging.error(f"Error with xlrd engine: {str(e)}")
-                # Try openpyxl as fallback
-                file.seek(0)
-                df = pd.read_excel(file, engine='openpyxl')
-                logging.debug("Fallback to openpyxl for XLS file")
+            df = pd.read_excel(file, engine='xlrd')
+            logging.debug("Reading XLS file with xlrd engine")
         elif file.name.endswith('.xlsx'):
             # For newer .xlsx files
-            try:
-                df = pd.read_excel(file, engine='openpyxl')
-                logging.debug("Reading XLSX file with openpyxl engine")
-            except Exception as e:
-                logging.error(f"Error with openpyxl engine: {str(e)}")
-                # Try a more resilient approach if available
-                file.seek(0)
-                df = pd.read_excel(file, engine='openpyxl', storage_options={'mode': 'rb'})
-                logging.debug("Reading XLSX file with binary mode")
+            df = pd.read_excel(file, engine='openpyxl')
+            logging.debug("Reading XLSX file with openpyxl engine")
         else:
             raise ValueError(f"Unsupported file format. Please use .xlsx, .xls, or .csv files")
                 
@@ -184,7 +160,7 @@ def process_excel_data(file):
     df['Unsold Qty (Ton)'] = pd.to_numeric(df['Unsold Qty (Ton)'])
 
     # Standardize market categories
-    df['Centre'] = df['Centre'].astype(str).apply(standardize_market_category)
+    df['Centre'] = df['Centre'].apply(standardize_market_category)
 
     return df
 
@@ -193,17 +169,10 @@ def analyze_levels(df: pd.DataFrame, centre: str) -> List[str]:
     """Analyze current market position and absolute values"""
     insights = []
     centre_df = df[df['Centre'] == centre].copy()
-    
-    if centre_df.empty:
-        return ["No data available for the selected market."]
 
     # Latest market position
     latest_sale = centre_df['Sale No'].max()
-    latest_data_df = centre_df[centre_df['Sale No'] == latest_sale]
-    if latest_data_df.empty:
-        return ["No data available for the latest sale period."]
-    
-    latest_data = latest_data_df.iloc[0]
+    latest_data = centre_df[centre_df['Sale No'] == latest_sale].iloc[0]
 
     # Price level analysis with weighted average
     weighted_avg_price = (
@@ -243,13 +212,7 @@ def analyze_levels(df: pd.DataFrame, centre: str) -> List[str]:
 def analyze_trends(df: pd.DataFrame, centre: str) -> List[str]:
     """Analyze time-series patterns and changes"""
     insights = []
-    centre_df = df[df['Centre'] == centre].copy()
-    
-    if centre_df.empty:
-        return ["No data available for the selected market."]
-    
-    # Sort by Sale No - handle sorting with ascending parameter to fix error
-    centre_df = centre_df.sort_values(by='Sale No', ascending=True)
+    centre_df = df[df['Centre'] == centre].sort_values('Sale No').copy()
 
     # Calculate weighted average prices for trend analysis
     centre_df['Weighted_Price'] = (
@@ -303,16 +266,9 @@ def analyze_comparatives(df: pd.DataFrame, centre: str) -> List[str]:
     insights = []
     
     try:
-        # Handle empty dataframe
-        if df.empty:
-            return ["No data available for analysis."]
-            
         # Extract region and tea type from centre name
-        if ' CTC ' not in centre:
-            return ["Invalid market format. Expected format: {region} CTC {type}"]
-            
         region, tea_type = centre.split(' CTC ')
-        tea_type = tea_type.strip() if tea_type else ""  # Clean any whitespace
+        tea_type = tea_type.strip()  # Clean any whitespace
         
         # Filter markets by region and tea type for fair comparison
         filtered_markets = [
@@ -384,14 +340,9 @@ def analyze_comparatives(df: pd.DataFrame, centre: str) -> List[str]:
         logging.error(f"Error in comparative analysis: {str(e)}")
         return [f"Error in comparative analysis: {str(e)}"]
 
-def calculate_weighted_price(data: pd.DataFrame | pd.Series) -> float:
+def calculate_weighted_price(data: pd.DataFrame) -> float:
     """Calculate weighted average price for a given dataset using batch processing"""
     batch_size = 1000  # Define batch size for processing
-    
-    # Ensure we have a DataFrame
-    if isinstance(data, pd.Series):
-        return 0
-        
     if len(data) == 0:
         return 0
 
@@ -443,14 +394,7 @@ def generate_ai_narrative(df: pd.DataFrame, centre: str) -> str:
             return "AI narrative generation unavailable: OpenAI API key not found in environment variables."
 
         client = openai.OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
-        
-        # Check if data is available
-        filtered_df = df[df['Centre'] == centre].copy()
-        if filtered_df.empty:
-            return "No data available for the selected market."
-            
-        # Sort by Sale No with proper syntax
-        centre_df = filtered_df.sort_values(by='Sale No', ascending=True)
+        centre_df = df[df['Centre'] == centre].sort_values('Sale No').copy()
 
         # Calculate comprehensive metrics
         current_price = centre_df['Sales Price(Kg)'].iloc[-1]
@@ -508,14 +452,7 @@ def generate_price_analysis(df: pd.DataFrame, centre: str) -> str:
             return "Price analysis unavailable: OpenAI API key not found in environment variables."
 
         client = openai.OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
-        
-        # Check if data is available
-        filtered_df = df[df['Centre'] == centre].copy()
-        if filtered_df.empty:
-            return "No data available for the selected market."
-            
-        # Sort by Sale No with proper syntax
-        centre_df = filtered_df.sort_values(by='Sale No', ascending=True)
+        centre_df = df[df['Centre'] == centre].sort_values('Sale No').copy()
 
         # Calculate comprehensive price metrics
         current_price = centre_df['Sales Price(Kg)'].iloc[-1]
@@ -585,14 +522,7 @@ def generate_market_insights(df: pd.DataFrame, centre: str) -> str:
             return "Market insights unavailable: OpenAI API key not found in environment variables."
 
         client = openai.OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
-        
-        # Check if data is available
-        filtered_df = df[df['Centre'] == centre].copy()
-        if filtered_df.empty:
-            return "No data available for the selected market."
-            
-        # Sort by Sale No with proper syntax
-        centre_df = filtered_df.sort_values(by='Sale No', ascending=True)
+        centre_df = df[df['Centre'] == centre].sort_values('Sale No').copy()
 
         # Calculate comprehensive market metrics
         market_share = centre_df['Sold Qty (Ton)'].sum(

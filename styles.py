@@ -116,18 +116,11 @@ def apply_custom_styles():
             will-change: transform;
         }
         
-        /* Optimization for tab containers to reduce layout thrashing and fix ResizeObserver errors */
+        /* Optimization for tab containers to reduce layout thrashing */
         .stTabs > div[role="tabpanel"] {
-            contain: content;
+            contain: layout style;
             transform: translateZ(0);
-        }
-        
-        /* Fix for ResizeObserver errors with Plotly charts */
-        .js-plotly-plot, .plotly, .plot-container {
-            transform: translateZ(0);
-            position: relative;
-            contain: layout size;
-            max-width: 100%;
+            will-change: transform;
         }
         
         .stTabs [aria-selected="true"] {

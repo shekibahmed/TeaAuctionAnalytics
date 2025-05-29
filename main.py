@@ -186,28 +186,53 @@ try:
 
             # AI-Powered Market Analysis section
             st.markdown("---")  # Add a visual separator
-            st.header("AI-Powered Market Analysis")
+            st.markdown("""
+                <h2 style='text-align: center; color: #1F4E79; margin-bottom: 2rem;'>AI-Powered Market Analysis</h2>
+                
+                <div style='display: flex; justify-content: space-between; gap: 2rem; margin-bottom: 2rem;'>
+                    <!-- Market Narrative -->
+                    <div style='flex: 1;'>
+                        <h3 style='color: #1F4E79; margin-bottom: 1rem;'>Market Narrative 📊</h3>
+            """, unsafe_allow_html=True)
             
-            # Use Streamlit's native column layout instead of HTML flex
             if len(selected_centres) == 1:
-                col1, col2, col3 = st.columns(3)
-                
-                with col1:
-                    st.subheader("Market Narrative 📊")
-                    narrative = generate_ai_narrative(df_selected, selected_centres[0])
-                    st.markdown(narrative)
-                
-                with col2:
-                    st.subheader("Price Analysis 💰")
-                    price_insights = generate_price_analysis(df_selected, selected_centres[0])
-                    st.markdown(price_insights)
-                
-                with col3:
-                    st.subheader("Market Insights 📈")
-                    market_insights = generate_market_insights(df_selected, selected_centres[0])
-                    st.markdown(market_insights)
+                narrative = generate_ai_narrative(df_selected, selected_centres[0])
+                st.markdown(narrative)
             else:
                 st.info("Please select a single market for detailed AI analysis")
+                
+            st.markdown("""
+                    </div>
+                    
+                    <!-- Price Analysis -->
+                    <div style='flex: 1;'>
+                        <h3 style='color: #1F4E79; margin-bottom: 1rem;'>Price Analysis 💰</h3>
+            """, unsafe_allow_html=True)
+            
+            if len(selected_centres) == 1:
+                price_insights = generate_price_analysis(df_selected, selected_centres[0])
+                st.markdown(price_insights)
+            else:
+                st.info("Please select a single market for price analysis")
+                
+            st.markdown("""
+                    </div>
+                    
+                    <!-- Market Insights -->
+                    <div style='flex: 1;'>
+                        <h3 style='color: #1F4E79; margin-bottom: 1rem;'>Market Insights 📈</h3>
+            """, unsafe_allow_html=True)
+            
+            if len(selected_centres) == 1:
+                market_insights = generate_market_insights(df_selected, selected_centres[0])
+                st.markdown(market_insights)
+            else:
+                st.info("Please select a single market for market insights")
+                
+            st.markdown("""
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
 
             # Statistical Analysis section with tabs
             st.markdown("---")  # Add a visual separator
