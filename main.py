@@ -149,12 +149,12 @@ try:
                                              default=["Dust"],
                                              key='type_selector')
 
-            # Filter centres based on region and type selection
-            selected_centres = sorted([
+            # Filter centres based on region and type selection (remove duplicates)
+            selected_centres = sorted(list(set([
                 centre for centre in centres_list
                 if any(region in centre for region in selected_regions) and any(
                     tea_type in centre for tea_type in selected_types)
-            ])
+            ])))
 
             if not selected_centres:
                 st.warning("Please select at least one region and tea type.")
@@ -280,10 +280,6 @@ try:
                     <div style='flex: 1;'>
                         <h3 style='color: #1F4E79; margin-bottom: 1rem;'>Market Narrative 📊</h3>
             """, unsafe_allow_html=True)
-            
-            # Debug info to understand the selection
-            st.write(f"Debug: Selected centres count: {len(selected_centres)}")
-            st.write(f"Debug: Selected centres: {selected_centres}")
             
             if len(selected_centres) == 1:
                 with ProgressTracker(2, 'ai_analysis') as progress:
