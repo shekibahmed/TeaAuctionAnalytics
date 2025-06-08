@@ -281,6 +281,10 @@ try:
                         <h3 style='color: #1F4E79; margin-bottom: 1rem;'>Market Narrative 📊</h3>
             """, unsafe_allow_html=True)
             
+            # Debug info to understand the selection
+            st.write(f"Debug: Selected centres count: {len(selected_centres)}")
+            st.write(f"Debug: Selected centres: {selected_centres}")
+            
             if len(selected_centres) == 1:
                 with ProgressTracker(2, 'ai_analysis') as progress:
                     progress.update("AI sommelier analyzing your data...")
