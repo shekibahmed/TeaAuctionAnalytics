@@ -18,6 +18,8 @@ try:
                       analyze_levels, analyze_trends, analyze_comparatives,
                       calculate_correlations, analyze_key_correlations)
     from styles import apply_custom_styles
+    from loading_animations import (TeaLoadingAnimations, ProgressTracker, 
+                                   show_loading_animation, simulate_processing_delay)
     import os
     
     # Setup page config
@@ -48,20 +50,56 @@ try:
             use_sample = st.button("Load Sample Data", 
                                  help="Load demo data to explore dashboard features",
                                  type="secondary")
+            
+            if st.button("ℹ️ About Sample Data"):
+                st.info("""
+                **Sample Dataset Overview:**
+                - 24 records from North & South India CTC markets
+                - Both Leaf and Dust tea varieties included  
+                - Sale numbers 40-46 representing auction sessions
+                - Price, volume, and unsold quantity metrics
+                - Perfect for testing all dashboard features
+                """)
+                
+                # Show a preview of the sample data
+                try:
+                    sample_preview = pd.read_csv('assets/default_data.csv')
+                    st.subheader("📊 Data Preview")
+                    st.dataframe(sample_preview.head(8), use_container_width=True)
+                    st.caption(f"Showing first 8 of {len(sample_preview)} total records")
+                except Exception as e:
+                    st.error(f"Could not load preview: {str(e)}")
+            
         
         # Process data based on user choice
         df = None
         if uploaded_file is not None:
-            df = process_excel_data(uploaded_file)
+            # Show animated loading for file upload
+            with ProgressTracker(3, 'upload') as progress:
+                progress.update("Reading file contents...")
+                simulate_processing_delay(0.3, 0.8)
+                
+                progress.update("Validating data structure...")
+                simulate_processing_delay(0.2, 0.6)
+                
+                progress.update("Processing Excel data...")
+                df = process_excel_data(uploaded_file)
+                
             st.success("✅ File uploaded and processed successfully!")
+            
         elif use_sample:
             try:
+                # Show tea garden growing animation for sample data
+                show_loading_animation("tea_garden", 
+                                     message="Loading sample CTC tea market data...")
+                
                 # Load sample data and process it through the same pipeline
                 import io
                 with open('assets/default_data.csv', 'rb') as f:
                     sample_data = io.BytesIO(f.read())
                 sample_data.name = 'default_data.csv'  # Set name for processing
                 df = process_excel_data(sample_data)
+                
                 st.success("✅ Sample data loaded successfully!")
                 st.info("📊 This sample contains CTC tea auction data from North and South India markets for demonstration purposes.")
             except Exception as e:
@@ -225,7 +263,12 @@ try:
             """, unsafe_allow_html=True)
             
             if len(selected_centres) == 1:
-                narrative = generate_ai_narrative(df_selected, selected_centres[0])
+                with ProgressTracker(2, 'ai_analysis') as progress:
+                    progress.update("AI sommelier analyzing your data...")
+                    simulate_processing_delay(0.5, 1.0)
+                    
+                    progress.update("Crafting market narrative...")
+                    narrative = generate_ai_narrative(df_selected, selected_centres[0])
                 st.markdown(narrative)
             else:
                 st.info("Please select a single market for detailed AI analysis")
