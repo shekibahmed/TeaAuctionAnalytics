@@ -121,17 +121,19 @@ try:
         if df is not None:
 
             # Center selection with region and type filtering
+            df = df.copy()  # Ensure we have a proper DataFrame copy
+            centres_list = df['Centre'].tolist()
             regions = sorted(
                 list(
                     set([
                         centre.split(' CTC ')[0]
-                        for centre in df['Centre'].unique()
+                        for centre in centres_list
                     ])))
             tea_types = sorted(
                 list(
                     set([
                         centre.split(' CTC ')[1]
-                        for centre in df['Centre'].unique()
+                        for centre in centres_list
                     ])))
 
             col1, col2 = st.columns(2)
@@ -149,7 +151,7 @@ try:
 
             # Filter centres based on region and type selection
             selected_centres = sorted([
-                centre for centre in df['Centre'].unique()
+                centre for centre in centres_list
                 if any(region in centre for region in selected_regions) and any(
                     tea_type in centre for tea_type in selected_types)
             ])
@@ -158,8 +160,9 @@ try:
                 st.warning("Please select at least one region and tea type.")
                 st.stop()
 
-            # Filter data for selected centres
+            # Filter data for selected centres and ensure proper DataFrame type
             df_selected = df[df['Centre'].isin(selected_centres)].copy()
+            df_selected = pd.DataFrame(df_selected)  # Ensure proper DataFrame type
 
             # Create charts based on selection
             num_centres = len(selected_centres)
@@ -179,6 +182,7 @@ try:
 
                 centre = selected_centres[0]
                 centre_df = df_selected[df_selected['Centre'] == centre].copy()
+                centre_df = pd.DataFrame(centre_df)  # Ensure DataFrame type
 
                 # Extract region and type for title
                 region, tea_type = centre.split(' CTC ')
@@ -251,17 +255,20 @@ try:
                     margin=dict(t=30, b=100, l=60, r=60),
                     showlegend=True)
 
-                # Define Plotly config
+                # Define Plotly config with ResizeObserver optimization
                 plotly_config = {
                     "displayModeBar": True,
                     "modeBarButtonsToRemove": ["drawTools"],
-                    "showTips": True
+                    "showTips": True,
+                    "responsive": True,
+                    "staticPlot": False
                 }
 
-                # Render the chart with the updated config
+                # Render the chart with optimized config
                 st.plotly_chart(fig,
                              use_container_width=True,
-                             config=plotly_config)
+                             config=plotly_config,
+                             key="main_chart")
 
             # AI-Powered Market Analysis section
             st.markdown("---")  # Add a visual separator
