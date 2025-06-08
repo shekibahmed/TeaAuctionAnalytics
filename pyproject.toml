@@ -1,7 +1,25 @@
 [project]
-name = "repl-nix-salestrendanalyzer"
+name = "ctc-tea-sales-analytics"
 version = "0.1.0"
-description = "Add your description here"
+description = "Comprehensive Streamlit-powered analytics dashboard for analyzing CTC tea sales data across North and South India markets with AI-powered insights"
+authors = [
+    {name = "CTC Tea Analytics Team"},
+]
+readme = "README.md"
+license = {file = "LICENSE"}
+keywords = ["tea", "analytics", "dashboard", "streamlit", "market-analysis", "ctc", "india", "data-visualization"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: End Users/Desktop",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Topic :: Office/Business :: Financial :: Investment",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Framework :: Streamlit",
+]
 requires-python = ">=3.11"
 dependencies = [
     "numpy==1.26.2",

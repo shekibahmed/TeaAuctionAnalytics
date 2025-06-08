@@ -43,26 +43,40 @@ A comprehensive Streamlit-powered analytics dashboard for analyzing CTC (Crush, 
 
 ## Installation
 
+### Quick Start
+
 1. **Clone the repository**:
    ```bash
-   git clone <your-repository-url>
-   cd tea-sales-analytics
+   git clone https://github.com/your-username/ctc-tea-sales-analytics.git
+   cd ctc-tea-sales-analytics
    ```
 
-2. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-   
-   Or if using the project file:
+2. **Install dependencies using pip**:
    ```bash
    pip install .
+   ```
+   
+   Or install from pyproject.toml directly:
+   ```bash
+   pip install -e .
    ```
 
 3. **Set up environment variables** (optional for AI features):
    ```bash
    export OPENAI_API_KEY="your-openai-api-key"
    ```
+
+### Alternative Installation Methods
+
+**Using pip with dependencies list**:
+```bash
+pip install streamlit==1.29.0 pandas==2.1.3 plotly==5.18.0 openai==1.3.5 numpy==1.26.2 openpyxl xlrd reportlab plotly-express
+```
+
+**For development**:
+```bash
+pip install -e ".[dev]"
+```
 
 ## Usage
 
@@ -260,7 +274,7 @@ streamlit run main.py --logger.level=debug
 
 ## License
 
-This project is open source. Please check the license file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Support
 
