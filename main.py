@@ -19,7 +19,8 @@ try:
                       calculate_correlations, analyze_key_correlations)
     from styles import apply_custom_styles
     from loading_animations import (TeaLoadingAnimations, ProgressTracker, 
-                                   show_loading_animation, simulate_processing_delay)
+                                   show_loading_animation, simulate_processing_delay,
+                                   show_advanced_loading_animation, EnhancedProgressTracker)
     import os
     
     # Setup page config
@@ -384,8 +385,9 @@ try:
                         progress.update("Preparing visualization data...")
                         simulate_processing_delay(0.2, 0.4)
                     
-                    # Visualization Section
+                    # Visualization Section with advanced animation
                     with st.expander("📈 Market Position Visualization", expanded=True):
+                        show_advanced_loading_animation("chart_brewing", chart_type="Market Position")
                         position_fig = go.Figure()
                         
                         if position_metric == "Price":
@@ -668,6 +670,7 @@ try:
                         
                     # Correlation Analysis Section
                     with st.expander("🔄 Correlation Analysis", expanded=True):
+                        show_advanced_loading_animation("correlation_blending")
                         # Create correlation heatmap
                         correlation_matrix = calculate_correlations(df_selected, selected_centres[0])
                         correlation_fig = go.Figure(data=go.Heatmap(

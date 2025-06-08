@@ -23,6 +23,14 @@ A comprehensive Streamlit-powered analytics dashboard for analyzing CTC (Crush, 
 - **Real-time Processing**: Dynamic data filtering and analysis
 - **Export Capabilities**: PDF report generation for detailed analysis
 
+### 🫖 Tea-Themed Loading Animations
+- **Welcome Brewing Sequence**: Animated introduction for first-time users with tea preparation stages
+- **Data Upload Animations**: Tea steeping progress indicators during file processing
+- **AI Analysis Animations**: Tea master tasting animations for market intelligence generation
+- **Visualization Brewing**: Tea preparation animations while charts are being generated
+- **Correlation Blending**: Tea blending animations for relationship analysis
+- **Progress Tracking**: Multi-stage tea ceremony progress indicators with elapsed time
+
 ## Technology Stack
 
 - **Frontend**: Streamlit 1.29.0
@@ -134,10 +142,58 @@ Example: "North India CTC Leaf", "South India CTC Dust"
 ├── main.py              # Main Streamlit application
 ├── utils.py             # Data processing and analysis utilities
 ├── styles.py            # Custom CSS styling
+├── loading_animations.py # Tea-themed loading animation system
+├── assets/              # Sample data and resources
+│   └── default_data.csv # Sample tea market dataset
 ├── pyproject.toml       # Project dependencies
 ├── .replit              # Replit configuration
 └── README.md            # This file
 ```
+
+## Animation System (`loading_animations.py`)
+
+The dashboard features a comprehensive tea-themed loading animation system that enhances user experience during data processing and analysis operations.
+
+### Animation Categories
+
+#### 🫖 **TeaLoadingAnimations** - Core Animation Class
+- **Tea Messages**: 50+ themed messages across 5 categories (upload, processing, ai_analysis, visualization, report)
+- **Tea Icons**: 10 animated tea-related emojis (teapot, cup, leaves, steam, etc.)
+- **Progress Animations**: Spinning teapot, tea leaf progress bars, steaming cup sequences
+
+#### 🎭 **ProgressTracker** - Context Manager
+- **Multi-step Progress**: Tracks progress across multiple processing stages
+- **Elapsed Time Display**: Shows processing duration for transparency
+- **Automatic Cleanup**: Removes animation placeholders when complete
+- **Category-based Messages**: Different message sets for different operations
+
+#### 🏭 **TeaStationAnimator** - Advanced Animations
+- **Chart Brewing**: 4-stage visualization preparation with progress tracking
+- **Correlation Blending**: Tea blending metaphor for relationship analysis
+- **Market Intelligence**: Sophisticated tea tasting animation for AI analysis
+
+#### 🎪 **EnhancedProgressTracker** - Ceremony Themes
+- **Traditional Ceremony**: Classical tea preparation with reverent styling
+- **Modern Station**: Contemporary brewing with digital aesthetics
+- **Artisan Crafting**: Hand-crafted approach with premium styling
+
+### Animation Integration Points
+
+1. **App Initialization**: Welcome brewing sequence on first visit
+2. **Data Upload**: Tea steeping animations during file processing
+3. **Sample Data Loading**: Quick brewing animation for instant data access
+4. **AI Analysis**: Tea master tasting sequence for all AI-powered insights
+5. **Chart Generation**: Visualization brewing for market position charts
+6. **Correlation Analysis**: Tea blending animation for relationship matrices
+7. **Statistical Processing**: Multi-stage progress tracking for complex calculations
+
+### Technical Implementation
+
+- **HTML/CSS Animations**: Custom styled progress bars with gradient effects
+- **Dynamic Content**: Real-time message updates with contextual tea terminology
+- **Responsive Design**: Animations adapt to mobile and desktop viewports
+- **Performance Optimized**: Lightweight animations that don't impact data processing
+- **State Management**: Proper cleanup prevents UI conflicts and memory leaks
 
 ## Key Functions
 
