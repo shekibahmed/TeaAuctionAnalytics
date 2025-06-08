@@ -33,13 +33,42 @@ try:
     """)
 
     try:
-        uploaded_file = st.file_uploader("Upload Excel File",
-                                      type=['xlsx', 'xls', 'csv'])
-
+        # File upload section with sample data option
+        st.subheader("📁 Data Input")
+        
+        col1, col2 = st.columns([2, 1])
+        
+        with col1:
+            uploaded_file = st.file_uploader("Upload Your Data File",
+                                          type=['xlsx', 'xls', 'csv'],
+                                          help="Upload Excel or CSV files with your CTC tea auction data")
+        
+        with col2:
+            st.markdown("**Or try with sample data:**")
+            use_sample = st.button("Load Sample Data", 
+                                 help="Load demo data to explore dashboard features",
+                                 type="secondary")
+        
+        # Process data based on user choice
+        df = None
         if uploaded_file is not None:
-            # Process uploaded file
             df = process_excel_data(uploaded_file)
-            st.success("File uploaded and processed successfully!")
+            st.success("✅ File uploaded and processed successfully!")
+        elif use_sample:
+            try:
+                # Load sample data and process it through the same pipeline
+                import io
+                with open('assets/default_data.csv', 'rb') as f:
+                    sample_data = io.BytesIO(f.read())
+                sample_data.name = 'default_data.csv'  # Set name for processing
+                df = process_excel_data(sample_data)
+                st.success("✅ Sample data loaded successfully!")
+                st.info("📊 This sample contains CTC tea auction data from North and South India markets for demonstration purposes.")
+            except Exception as e:
+                st.error(f"❌ Error loading sample data: {str(e)}")
+                df = None
+
+        if df is not None:
 
             # Center selection with region and type filtering
             regions = sorted(
