@@ -27,6 +27,17 @@ try:
                       layout="wide")
     apply_custom_styles()
 
+    # Welcome animation for first time users
+    if 'app_initialized' not in st.session_state:
+        st.session_state.app_initialized = True
+        welcome_stages = [
+            "Warming up the tea brewing station...",
+            "Selecting finest CTC leaves for analysis...",
+            "Preparing dashboard with market intelligence...",
+            "Ready to serve your analytics!"
+        ]
+        show_loading_animation("brewing_process", stages=welcome_stages)
+
     # Add title with description
     st.title("Auction Analytics")
     st.markdown("""
@@ -282,7 +293,12 @@ try:
             """, unsafe_allow_html=True)
             
             if len(selected_centres) == 1:
-                price_insights = generate_price_analysis(df_selected, selected_centres[0])
+                with ProgressTracker(2, 'ai_analysis') as progress:
+                    progress.update("Analyzing price patterns and trends...")
+                    simulate_processing_delay(0.4, 0.8)
+                    
+                    progress.update("Generating price intelligence...")
+                    price_insights = generate_price_analysis(df_selected, selected_centres[0])
                 st.markdown(price_insights)
             else:
                 st.info("Please select a single market for price analysis")
@@ -296,7 +312,12 @@ try:
             """, unsafe_allow_html=True)
             
             if len(selected_centres) == 1:
-                market_insights = generate_market_insights(df_selected, selected_centres[0])
+                with ProgressTracker(2, 'ai_analysis') as progress:
+                    progress.update("Distilling market wisdom...")
+                    simulate_processing_delay(0.3, 0.7)
+                    
+                    progress.update("Crafting strategic insights...")
+                    market_insights = generate_market_insights(df_selected, selected_centres[0])
                 st.markdown(market_insights)
             else:
                 st.info("Please select a single market for market insights")
@@ -351,8 +372,17 @@ try:
                                 help="Select analysis time period"
                             )
                     
-                    # Data Processing
-                    centre_df = df_selected[df_selected['Centre'] == selected_centres[0]].copy()
+                    # Data Processing with animation
+                    with ProgressTracker(3, 'processing') as progress:
+                        progress.update("Filtering data for selected centre...")
+                        centre_df = df_selected[df_selected['Centre'] == selected_centres[0]].copy()
+                        simulate_processing_delay(0.2, 0.5)
+                        
+                        progress.update("Calculating market position metrics...")
+                        simulate_processing_delay(0.3, 0.6)
+                        
+                        progress.update("Preparing visualization data...")
+                        simulate_processing_delay(0.2, 0.4)
                     
                     # Visualization Section
                     with st.expander("📈 Market Position Visualization", expanded=True):
