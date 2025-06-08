@@ -429,7 +429,18 @@ try:
                             height=300
                         )
                         
-                        st.plotly_chart(position_fig, use_container_width=True)
+                        # Optimized chart configuration
+                        position_config = {
+                            "displayModeBar": True,
+                            "modeBarButtonsToRemove": ["drawTools"],
+                            "showTips": True,
+                            "responsive": True,
+                            "staticPlot": False
+                        }
+                        st.plotly_chart(position_fig, 
+                                      use_container_width=True, 
+                                      config=position_config,
+                                      key="position_chart")
                     
                     # Analysis Section
                     with st.expander("📊 Position Analysis Insights", expanded=True):
@@ -520,7 +531,18 @@ try:
                             )
                         )
                         
-                        st.plotly_chart(price_fig, use_container_width=True)
+                        # Optimized chart configuration
+                        price_config = {
+                            "displayModeBar": True,
+                            "modeBarButtonsToRemove": ["drawTools"],
+                            "showTips": True,
+                            "responsive": True,
+                            "staticPlot": False
+                        }
+                        st.plotly_chart(price_fig, 
+                                      use_container_width=True, 
+                                      config=price_config,
+                                      key="price_trends_chart")
                     
                     # Market Efficiency Visualization
                     with st.expander("📈 Market Efficiency Analysis", expanded=True):
@@ -576,7 +598,18 @@ try:
                             )
                         )
                         
-                        st.plotly_chart(efficiency_fig, use_container_width=True)
+                        # Optimized chart configuration
+                        efficiency_config = {
+                            "displayModeBar": True,
+                            "modeBarButtonsToRemove": ["drawTools"],
+                            "showTips": True,
+                            "responsive": True,
+                            "staticPlot": False
+                        }
+                        st.plotly_chart(efficiency_fig, 
+                                      use_container_width=True, 
+                                      config=efficiency_config,
+                                      key="efficiency_chart")
                     
                     # Insights Section
                     with st.expander("📊 Trend Analysis Insights", expanded=True):
@@ -673,7 +706,18 @@ try:
                             )
                         )
                         
-                        st.plotly_chart(comparative_fig, use_container_width=True)
+                        # Optimized chart configuration
+                        comparative_config = {
+                            "displayModeBar": True,
+                            "modeBarButtonsToRemove": ["drawTools"],
+                            "showTips": True,
+                            "responsive": True,
+                            "staticPlot": False
+                        }
+                        st.plotly_chart(comparative_fig, 
+                                      use_container_width=True, 
+                                      config=comparative_config,
+                                      key="comparative_chart")
                         
                     # Correlation Analysis Section
                     with st.expander("🔄 Correlation Analysis", expanded=True):
@@ -695,7 +739,18 @@ try:
                             height=300
                         )
                         
-                        st.plotly_chart(correlation_fig, use_container_width=True)
+                        # Optimized chart configuration
+                        correlation_config = {
+                            "displayModeBar": True,
+                            "modeBarButtonsToRemove": ["drawTools"],
+                            "showTips": True,
+                            "responsive": True,
+                            "staticPlot": False
+                        }
+                        st.plotly_chart(correlation_fig, 
+                                      use_container_width=True, 
+                                      config=correlation_config,
+                                      key="correlation_chart")
                     
                     # Insights Section
                     with st.expander("📈 Comparative Analysis Insights", expanded=True):
@@ -784,7 +839,18 @@ try:
                             height=300
                         )
                         
-                        st.plotly_chart(hist_fig, use_container_width=True)
+                        # Optimized chart configuration
+                        hist_config = {
+                            "displayModeBar": True,
+                            "modeBarButtonsToRemove": ["drawTools"],
+                            "showTips": True,
+                            "responsive": True,
+                            "staticPlot": False
+                        }
+                        st.plotly_chart(hist_fig, 
+                                      use_container_width=True, 
+                                      config=hist_config,
+                                      key="histogram_chart")
                         
                         # Add price statistics
                         col1, col2, col3 = st.columns(3)
@@ -851,7 +917,18 @@ try:
                             )
                         )
                         
-                        st.plotly_chart(volume_fig, use_container_width=True)
+                        # Optimized chart configuration
+                        volume_config = {
+                            "displayModeBar": True,
+                            "modeBarButtonsToRemove": ["drawTools"],
+                            "showTips": True,
+                            "responsive": True,
+                            "staticPlot": False
+                        }
+                        st.plotly_chart(volume_fig, 
+                                      use_container_width=True, 
+                                      config=volume_config,
+                                      key="volume_chart")
                         
                         # Add volume statistics
                         col1, col2 = st.columns(2)
