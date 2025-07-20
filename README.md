@@ -3,6 +3,22 @@
 
 A comprehensive Streamlit-powered analytics dashboard for analyzing CTC (Crush, Tear, Curl) tea sales data across North and South India markets. This application provides AI-powered market insights, statistical analysis, and interactive visualizations for tea auction data.
 
+## Screenshots
+
+### Dashboard Views
+
+#### Market Analysis
+![Market Analysis](assets/marketAnalysis.png)
+*AI-powered market intelligence and insights with comprehensive analysis of tea auction trends*
+
+#### Positional Analysis  
+![Positional Analysis](assets/positionalAnalysis.png)
+*Current market position metrics showing price, volume, and efficiency analysis across different tea markets*
+
+#### Statistical Analysis
+![Statistical Analysis](assets/statisticalAnalysis.png)
+*Detailed statistical analysis including correlations, trends, and comparative market data*
+
 ## Features
 
 ### 📊 Core Analytics
