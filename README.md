@@ -1,7 +1,9 @@
 
 # CTC Tea Sales Analytics Dashboard
 
-A comprehensive Streamlit-powered analytics dashboard for analyzing CTC (Crush, Tear, Curl) tea sales data across North and South India markets. This application provides AI-powered market insights, statistical analysis, and interactive visualizations for tea auction data.
+A comprehensive Streamlit-powered analytics dashboard for analyzing CTC (Crush, Tear, Curl) tea sales data  
+across North and South India markets. This application provides AI-powered market insights, statistical  
+analysis, and interactive visualizations for tea auction data.
 
 ## Screenshots
 
@@ -185,12 +187,14 @@ Example: "North India CTC Leaf", "South India CTC Dust"
 
 ## Animation System (`loading_animations.py`)
 
-The dashboard features a comprehensive tea-themed loading animation system that enhances user experience during data processing and analysis operations.
+The dashboard features a comprehensive tea-themed loading animation system that enhances user experience  
+during data processing and analysis operations.
 
 ### Animation Categories
 
 #### 🫖 **TeaLoadingAnimations** - Core Animation Class
-- **Tea Messages**: 50+ themed messages across 5 categories (upload, processing, ai_analysis, visualization, report)
+- **Tea Messages**: 50+ themed messages across 5 categories (upload, processing,  
+  ai_analysis, visualization, report)
 - **Tea Icons**: 10 animated tea-related emojis (teapot, cup, leaves, steam, etc.)
 - **Progress Animations**: Spinning teapot, tea leaf progress bars, steaming cup sequences
 
@@ -281,7 +285,8 @@ For other platforms, ensure:
 
 ### Common Issues
 
-1. **File Upload Errors**: Ensure your file has the required columns with accepted naming variations
+1. **File Upload Errors**: Ensure your file has the required columns with accepted  
+   naming variations
 2. **AI Features Not Working**: Check that `OPENAI_API_KEY` is properly set
 3. **Performance Issues**: For large datasets, the app includes optimized batch processing
 
@@ -311,4 +316,5 @@ For issues and questions:
 
 ---
 
-**Note**: This application is designed for tea market analysis and can be adapted for other commodity markets with similar data structures.
+**Note**: This application is designed for tea market analysis and can be adapted for other  
+commodity markets with similar data structures.
