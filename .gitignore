@@ -225,8 +225,11 @@ user_data/
 !assets/*.jpeg
 !assets/*.gif
 *.jpg
+!assets/*.jpg
 *.jpeg
+!assets/*.jpeg
 *.gif
+!assets/*.gif
 screenshot*.png
 image*.png
 
