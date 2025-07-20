@@ -9,14 +9,17 @@ A comprehensive Streamlit-powered analytics dashboard for analyzing CTC (Crush, 
 
 #### Market Analysis
 ![Market Analysis](assets/marketAnalysis.png)
+
 *AI-powered market intelligence and insights with comprehensive analysis of tea auction trends*
 
 #### Positional Analysis  
 ![Positional Analysis](assets/positionalAnalysis.png)
+
 *Current market position metrics showing price, volume, and efficiency analysis across different tea markets*
 
 #### Statistical Analysis
 ![Statistical Analysis](assets/statisticalAnalysis.png)
+
 *Detailed statistical analysis including correlations, trends, and comparative market data*
 
 ## Features
