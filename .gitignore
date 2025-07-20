@@ -218,8 +218,12 @@ generated_reports/
 uploads/
 user_data/
 
-# Screenshot files
+# Screenshot files (exclude assets folder)
 *.png
+!assets/*.png
+!assets/*.jpg
+!assets/*.jpeg
+!assets/*.gif
 *.jpg
 *.jpeg
 *.gif
